@@ -1,0 +1,19 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(curl -s -X POST http://localhost:4000/api/auth/login -H \"Content-Type: application/json\" -d '{\"email\":\"demo@smartbuilding.test\",\"password\":\"demo1234\"}')",
+      "Bash(npx prisma *)",
+      "Bash(npm run *)",
+      "Bash(npm install *)",
+      "Bash(npx tsc *)",
+      "Bash(curl -s http://localhost:5173/)",
+      "Bash(node -e \"const icons = require\\('lucide-react'\\); const needed = ['WashingMachine','Refrigerator','Waves','Sofa','UtensilsCrossed','Moon','Droplets','Building2','LayoutDashboard','DoorOpen','ChevronDown','ChevronRight','BarChart3','Clock','Activity','TrendingUp','CalendarDays','ArrowLeft','LogIn','Lock','Mail','LogOut','Menu','X','Plug','Lightbulb','Wind','Tv','Thermometer','Zap','Calendar']; needed.forEach\\(n => { if \\(!icons[n]\\) console.log\\('MISSING:', n\\); else console.log\\('OK:', n\\); }\\);\")",
+      "Bash(curl -s http://localhost:4000/api/health)",
+      "Bash(pkill -f \"tsx.*index.ts\")",
+      "Read(//tmp/**)",
+      "Read(//private/tmp/**)",
+      "Bash(curl -s -X POST http://localhost:4000/api/auth/login -H 'Content-Type: application/json' -d '{\"email\":\"demo@smartbuilding.test\",\"password\":\"demo1234\"}')",
+      "Bash(python3 -c \"import sys,json; d=json.load\\(sys.stdin\\); print\\('Day:', d['totals']['day'], 'kWh'\\)\")"
+    ]
+  }
+}
