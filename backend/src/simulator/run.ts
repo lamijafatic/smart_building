@@ -4,6 +4,9 @@ import { specFor } from '../utils/deviceFactory';
 const TICK_SECONDS = 15;
 const TICK_MS = TICK_SECONDS * 1000;
 
+const GAP_FILL_INTERVAL_S = 3600;
+const MAX_GAP_S = 7 * 24 * 3600;
+
 async function fillGaps(): Promise<void> {
   const onDevices = await prisma.device.findMany({ where: { status: true } });
   if (onDevices.length === 0) return;
@@ -19,24 +22,28 @@ async function fillGaps(): Promise<void> {
 
     if (!last) continue;
 
-    const gapMs = now.getTime() - last.timestamp.getTime();
-    const gapSeconds = gapMs / 1000;
-
+    const gapSeconds = (now.getTime() - last.timestamp.getTime()) / 1000;
     if (gapSeconds < TICK_SECONDS * 2) continue;
 
     const spec = specFor(device.type);
     const powerW = device.powerWatts ?? spec.defaultPowerWatts;
-    const gapKwh = (powerW * spec.loadFactor * gapSeconds) / 3_600_000;
+    const effectiveGapSeconds = Math.min(gapSeconds, MAX_GAP_S);
+    const ticks = Math.floor(effectiveGapSeconds / GAP_FILL_INTERVAL_S);
 
-    readings.push({
-      deviceId: device.id,
-      valueKwh: Number(gapKwh.toFixed(6)),
-      timestamp: now,
-    });
+    for (let i = 1; i <= ticks; i++) {
+      const ts = new Date(last.timestamp.getTime() + i * GAP_FILL_INTERVAL_S * 1000);
+      const kwh = (powerW * spec.loadFactor * GAP_FILL_INTERVAL_S) / 3_600_000;
+      const noisy = kwh * (0.85 + Math.random() * 0.3);
+      readings.push({
+        deviceId: device.id,
+        valueKwh: Number(noisy.toFixed(6)),
+        timestamp: ts,
+      });
+    }
 
     console.log(
       `[simulator] gap-fill: device ${device.id} "${device.name}" — ` +
-        `${Math.round(gapSeconds / 60)} min offline → +${gapKwh.toFixed(4)} kWh`,
+        `${Math.round(gapSeconds / 60)} min offline → ${ticks} hourly readings inserted`,
     );
   }
 

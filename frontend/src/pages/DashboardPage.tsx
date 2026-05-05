@@ -1,25 +1,19 @@
 import { useEffect, useState } from 'react';
 import {
-  LineChart,
-  Line,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
-  BarChart,
-  Bar,
-  Legend,
+  LineChart, Line, XAxis, YAxis, CartesianGrid,
+  Tooltip, ResponsiveContainer, BarChart, Bar, Legend,
 } from 'recharts';
-import { Zap, Calendar, CalendarDays, TrendingUp, Activity, ChevronDown, Radio } from 'lucide-react';
+import { Zap, Calendar, CalendarDays, TrendingUp, Activity, ChevronDown } from 'lucide-react';
 import type { DashboardData, Apartment } from '../types';
 import { StatCard } from '../components/StatCard';
 import { apartmentsApi } from '../api/apartments';
 import { dashboardApi } from '../api/dashboard';
+import { useTheme } from '../contexts/ThemeContext';
 
 const REFRESH_MS = 15_000;
 
 export function DashboardPage() {
+  const { isDark } = useTheme();
   const [apartments, setApartments] = useState<Apartment[]>([]);
   const [selectedId, setSelectedId] = useState<number | null>(null);
   const [data, setData] = useState<DashboardData | null>(null);
@@ -27,6 +21,14 @@ export function DashboardPage() {
   const [error, setError] = useState<string | null>(null);
   const [liveWatts, setLiveWatts] = useState<number>(0);
   const [liveActiveCount, setLiveActiveCount] = useState<number>(0);
+
+  const chartStyle = {
+    grid: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.06)',
+    axis: isDark ? 'rgba(255,255,255,0.25)' : 'rgba(0,0,0,0.35)',
+    tooltip: isDark
+      ? { background: '#0d0d1a', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 10, fontSize: 12, color: '#fff' }
+      : { background: '#ffffff', border: '1px solid rgba(0,0,0,0.08)', borderRadius: 10, fontSize: 12, color: '#0f172a' },
+  };
 
   useEffect(() => {
     apartmentsApi
@@ -44,17 +46,12 @@ export function DashboardPage() {
 
   useEffect(() => {
     if (selectedId == null) return;
-
     let cancelled = false;
 
     async function fetchDashboard() {
       try {
         const d = await dashboardApi.getForApartment(selectedId!);
-        if (!cancelled) {
-          setData(d);
-          setLoading(false);
-          setError(null);
-        }
+        if (!cancelled) { setData(d); setLoading(false); setError(null); }
       } catch {
         if (!cancelled) setError('Unable to load data. Please try again.');
       } finally {
@@ -65,10 +62,7 @@ export function DashboardPage() {
     setLoading(true);
     fetchDashboard();
     const interval = setInterval(fetchDashboard, REFRESH_MS);
-    return () => {
-      cancelled = true;
-      clearInterval(interval);
-    };
+    return () => { cancelled = true; clearInterval(interval); };
   }, [selectedId]);
 
   useEffect(() => {
@@ -78,25 +72,18 @@ export function DashboardPage() {
     async function fetchLive() {
       try {
         const live = await dashboardApi.getLive(selectedId!);
-        if (!cancelled) {
-          setLiveWatts(live.totalWatts);
-          setLiveActiveCount(live.activeCount);
-        }
-      } catch {
-      }
+        if (!cancelled) { setLiveWatts(live.totalWatts); setLiveActiveCount(live.activeCount); }
+      } catch { }
     }
 
     fetchLive();
     const interval = setInterval(fetchLive, 5_000);
-    return () => {
-      cancelled = true;
-      clearInterval(interval);
-    };
+    return () => { cancelled = true; clearInterval(interval); };
   }, [selectedId]);
 
   if (error && !data) {
     return (
-      <div className="bg-red-50 text-red-700 border border-red-200 rounded-xl p-5 text-sm flex items-center gap-3">
+      <div className="bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/20 text-red-600 dark:text-red-400 rounded-2xl p-5 text-sm flex items-center gap-3">
         <Activity size={18} className="shrink-0" />
         {error}
       </div>
@@ -106,11 +93,14 @@ export function DashboardPage() {
   if (loading || !data) {
     return (
       <div className="space-y-6 animate-pulse">
-        <div className="h-8 bg-slate-200 rounded-lg w-48" />
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          {[0, 1, 2].map((i) => <div key={i} className="h-24 bg-slate-200 rounded-xl" />)}
+        <div className="h-8 bg-slate-200 dark:bg-white/[0.06] rounded-xl w-48" />
+        <div className="grid grid-cols-2 gap-4">
+          {[0, 1].map((i) => <div key={i} className="h-28 bg-slate-200 dark:bg-white/[0.06] rounded-2xl" />)}
         </div>
-        <div className="h-80 bg-slate-200 rounded-xl" />
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          {[0, 1, 2].map((i) => <div key={i} className="h-24 bg-slate-200 dark:bg-white/[0.06] rounded-2xl" />)}
+        </div>
+        <div className="h-80 bg-slate-200 dark:bg-white/[0.06] rounded-2xl" />
       </div>
     );
   }
@@ -121,14 +111,15 @@ export function DashboardPage() {
   }));
 
   const totalDevices = data.rooms.flatMap((r) => r.devices).length;
+  const isConsuming = liveWatts > 0;
 
   return (
     <div className="space-y-6">
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
-          <h2 className="text-2xl font-bold text-slate-900">Dashboard</h2>
-          <p className="text-sm text-slate-500 mt-0.5">
-            Apartment <span className="font-medium text-slate-700">{data.apartment.number}</span>
+          <h2 className="text-2xl font-black text-slate-900 dark:text-white tracking-tight">Dashboard</h2>
+          <p className="text-sm text-slate-400 dark:text-white/40 mt-0.5">
+            Apartment <span className="font-semibold text-slate-600 dark:text-white/70">{data.apartment.number}</span>
             &nbsp;&middot;&nbsp;{data.apartment.area} m²
           </p>
         </div>
@@ -137,160 +128,147 @@ export function DashboardPage() {
             <select
               value={selectedId ?? ''}
               onChange={(e) => setSelectedId(Number(e.target.value))}
-              className="appearance-none rounded-lg border border-slate-300 pl-3 pr-8 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-brand-500"
+              className="appearance-none rounded-xl bg-white dark:bg-white/[0.06] border border-slate-200 dark:border-white/[0.1] text-slate-900 dark:text-white pl-3 pr-8 py-2 text-sm focus:outline-none focus:border-yellow-400 dark:focus:border-yellow-400/50 transition"
             >
               {apartments.map((a) => (
-                <option key={a.id} value={a.id}>
-                  Apartment {a.number}
-                </option>
+                <option key={a.id} value={a.id}>Apartment {a.number}</option>
               ))}
             </select>
-            <ChevronDown size={14} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+            <ChevronDown size={14} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 dark:text-white/40 pointer-events-none" />
           </div>
         )}
       </div>
 
-      <div className={`rounded-xl border p-4 flex flex-wrap items-center gap-4 transition-all ${
-        liveWatts > 0
-          ? 'bg-emerald-50 border-emerald-200'
-          : 'bg-slate-50 border-slate-200'
-      }`}>
-        <div className="flex items-center gap-2">
-          <Radio
-            size={18}
-            className={liveWatts > 0 ? 'text-emerald-600 animate-pulse' : 'text-slate-400'}
-          />
-          <span className={`text-sm font-semibold ${liveWatts > 0 ? 'text-emerald-700' : 'text-slate-500'}`}>
-            {liveWatts > 0 ? 'Live — consuming now' : 'Standby — no active devices'}
-          </span>
+      {/* Live Power Cards */}
+      <div className="grid grid-cols-2 gap-4">
+        <div className={`bg-white dark:bg-white/[0.03] border rounded-2xl p-5 shadow-sm dark:shadow-none transition-all ${
+          isConsuming
+            ? 'border-yellow-300 dark:border-yellow-400/20'
+            : 'border-slate-200 dark:border-white/[0.08]'
+        }`}>
+          <div className="flex items-center justify-between mb-3">
+            <span className="text-xs font-bold uppercase tracking-widest text-slate-400 dark:text-white/30">Current Draw</span>
+            <span className={`inline-flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full ${
+              isConsuming
+                ? 'bg-emerald-100 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400'
+                : 'bg-slate-100 dark:bg-white/[0.06] text-slate-400 dark:text-white/30'
+            }`}>
+              <span className={`w-1.5 h-1.5 rounded-full ${isConsuming ? 'bg-emerald-500 animate-pulse' : 'bg-slate-300 dark:bg-white/20'}`} />
+              {isConsuming ? 'Live' : 'Idle'}
+            </span>
+          </div>
+          <p className={`text-3xl font-black tabular-nums leading-none ${isConsuming ? 'text-slate-900 dark:text-white' : 'text-slate-300 dark:text-white/20'}`}>
+            {liveWatts.toLocaleString()}
+            <span className="text-base font-normal text-slate-400 dark:text-white/30 ml-1.5">W</span>
+          </p>
+          <p className="text-xs text-slate-400 dark:text-white/25 mt-2">
+            {isConsuming ? `${(liveWatts / 1000).toFixed(2)} kW active` : 'No devices consuming'}
+          </p>
         </div>
 
-        <div className="flex flex-wrap items-center gap-6 ml-auto">
-          <div className="text-center">
-            <p className="text-xs text-slate-500 mb-0.5">Current draw</p>
-            <p className={`text-2xl font-bold tabular-nums ${liveWatts > 0 ? 'text-emerald-700' : 'text-slate-400'}`}>
-              {liveWatts.toLocaleString()} <span className="text-sm font-normal">W</span>
-            </p>
+        <div className={`bg-white dark:bg-white/[0.03] border rounded-2xl p-5 shadow-sm dark:shadow-none transition-all ${
+          isConsuming
+            ? 'border-yellow-300 dark:border-yellow-400/20'
+            : 'border-slate-200 dark:border-white/[0.08]'
+        }`}>
+          <div className="flex items-center justify-between mb-3">
+            <span className="text-xs font-bold uppercase tracking-widest text-slate-400 dark:text-white/30">Active Devices</span>
+            <Zap size={14} className={isConsuming ? 'text-yellow-500 dark:text-yellow-400' : 'text-slate-300 dark:text-white/20'} />
           </div>
-          <div className="text-center">
-            <p className="text-xs text-slate-500 mb-0.5">Active devices</p>
-            <p className={`text-2xl font-bold tabular-nums ${liveWatts > 0 ? 'text-emerald-700' : 'text-slate-400'}`}>
-              {liveActiveCount}
-              <span className="text-sm font-normal text-slate-400"> / {totalDevices}</span>
-            </p>
+          <p className={`text-3xl font-black tabular-nums leading-none ${isConsuming ? 'text-slate-900 dark:text-white' : 'text-slate-300 dark:text-white/20'}`}>
+            {liveActiveCount}
+            <span className="text-base font-normal text-slate-400 dark:text-white/30 ml-1.5">/ {totalDevices}</span>
+          </p>
+          <div className="mt-2 h-1.5 rounded-full bg-slate-100 dark:bg-white/[0.06] overflow-hidden">
+            <div
+              className="h-full rounded-full bg-yellow-400 transition-all duration-700"
+              style={{ width: totalDevices > 0 ? `${(liveActiveCount / totalDevices) * 100}%` : '0%' }}
+            />
           </div>
         </div>
       </div>
 
+      {/* Totals */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <StatCard
-          label="Today"
-          value={data.totals.day.toFixed(3)}
-          unit="kWh"
-          hint="from 00:00 today"
-          icon={Zap}
-          color="orange"
-        />
-        <StatCard
-          label="This week"
-          value={data.totals.week.toFixed(3)}
-          unit="kWh"
-          hint="since Monday"
-          icon={Calendar}
-          color="blue"
-        />
-        <StatCard
-          label="This month"
-          value={data.totals.month.toFixed(3)}
-          unit="kWh"
-          hint="month to date"
-          icon={CalendarDays}
-          color="purple"
-        />
+        <StatCard label="Today" value={data.totals.day.toFixed(3)} unit="kWh" hint="from 00:00 today" icon={Zap} color="yellow" />
+        <StatCard label="This week" value={data.totals.week.toFixed(3)} unit="kWh" hint="since Monday" icon={Calendar} color="blue" />
+        <StatCard label="This month" value={data.totals.month.toFixed(3)} unit="kWh" hint="month to date" icon={CalendarDays} color="purple" />
       </div>
 
-      <section className="bg-white rounded-xl border border-slate-200 p-6 shadow-sm">
-        <div className="flex items-center gap-2 mb-4">
-          <TrendingUp size={18} className="text-brand-600" />
-          <h3 className="text-base font-semibold text-slate-900">Daily consumption — last 7 days</h3>
+      {/* Daily chart */}
+      <section className="bg-white dark:bg-white/[0.03] border border-slate-200 dark:border-white/[0.08] rounded-2xl p-6 shadow-sm dark:shadow-none">
+        <div className="flex items-center gap-2 mb-5">
+          <TrendingUp size={17} className="text-yellow-500 dark:text-yellow-400" />
+          <h3 className="text-sm font-bold text-slate-900 dark:text-white">Daily consumption — last 7 days</h3>
         </div>
         <div className="h-64">
           <ResponsiveContainer width="100%" height="100%">
             <LineChart data={data.dailyChart} margin={{ top: 4, right: 8, bottom: 0, left: 0 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
-              <XAxis dataKey="date" stroke="#94a3b8" fontSize={12} tickLine={false} />
-              <YAxis stroke="#94a3b8" fontSize={12} unit=" kWh" tickLine={false} axisLine={false} />
-              <Tooltip
-                contentStyle={{ borderRadius: 8, border: '1px solid #e2e8f0', fontSize: 13 }}
-                formatter={(v: number) => [`${v.toFixed(3)} kWh`, 'Consumption']}
-              />
-              <Line
-                type="monotone"
-                dataKey="kwh"
-                stroke="#dc6803"
-                strokeWidth={2.5}
-                dot={{ r: 4, fill: '#dc6803', strokeWidth: 0 }}
-                activeDot={{ r: 6 }}
-              />
+              <CartesianGrid strokeDasharray="3 3" stroke={chartStyle.grid} />
+              <XAxis dataKey="date" stroke={chartStyle.axis} fontSize={11} tickLine={false} />
+              <YAxis stroke={chartStyle.axis} fontSize={11} unit=" kWh" tickLine={false} axisLine={false} />
+              <Tooltip contentStyle={chartStyle.tooltip} formatter={(v: number) => [`${v.toFixed(3)} kWh`, 'Consumption']} />
+              <Line type="monotone" dataKey="kwh" stroke="#facc15" strokeWidth={2.5} dot={{ r: 4, fill: '#facc15', strokeWidth: 0 }} activeDot={{ r: 6 }} />
             </LineChart>
           </ResponsiveContainer>
         </div>
       </section>
 
-      <section className="bg-white rounded-xl border border-slate-200 p-6 shadow-sm">
-        <div className="flex items-center gap-2 mb-4">
-          <Activity size={18} className="text-brand-600" />
-          <h3 className="text-base font-semibold text-slate-900">Weekly consumption per room</h3>
+      {/* Room bar chart */}
+      <section className="bg-white dark:bg-white/[0.03] border border-slate-200 dark:border-white/[0.08] rounded-2xl p-6 shadow-sm dark:shadow-none">
+        <div className="flex items-center gap-2 mb-5">
+          <Activity size={17} className="text-yellow-500 dark:text-yellow-400" />
+          <h3 className="text-sm font-bold text-slate-900 dark:text-white">Weekly consumption per room</h3>
         </div>
         <div className="h-64">
           <ResponsiveContainer width="100%" height="100%">
             <BarChart data={roomChartData} margin={{ top: 4, right: 8, bottom: 0, left: 0 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
-              <XAxis dataKey="name" stroke="#94a3b8" fontSize={12} tickLine={false} />
-              <YAxis stroke="#94a3b8" fontSize={12} unit=" kWh" tickLine={false} axisLine={false} />
-              <Tooltip
-                contentStyle={{ borderRadius: 8, border: '1px solid #e2e8f0', fontSize: 13 }}
-                formatter={(v: number) => [`${v.toFixed(3)} kWh`, 'This week']}
-              />
-              <Legend />
-              <Bar dataKey="kwh" name="kWh (week)" fill="#fdb022" radius={[6, 6, 0, 0]} />
+              <CartesianGrid strokeDasharray="3 3" stroke={chartStyle.grid} />
+              <XAxis dataKey="name" stroke={chartStyle.axis} fontSize={11} tickLine={false} />
+              <YAxis stroke={chartStyle.axis} fontSize={11} unit=" kWh" tickLine={false} axisLine={false} />
+              <Tooltip contentStyle={chartStyle.tooltip} formatter={(v: number) => [`${v.toFixed(3)} kWh`, 'This week']} />
+              <Legend wrapperStyle={{ color: isDark ? 'rgba(255,255,255,0.4)' : 'rgba(0,0,0,0.4)', fontSize: 12 }} />
+              <Bar dataKey="kwh" name="kWh (week)" fill="#facc15" radius={[6, 6, 0, 0]} />
             </BarChart>
           </ResponsiveContainer>
         </div>
       </section>
 
-      <section className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
-        <div className="px-6 py-4 border-b border-slate-100 flex items-center gap-2">
-          <Zap size={18} className="text-brand-600" />
-          <h3 className="text-base font-semibold text-slate-900">Per-device — this week</h3>
+      {/* Per-device table */}
+      <section className="bg-white dark:bg-white/[0.03] border border-slate-200 dark:border-white/[0.08] rounded-2xl overflow-hidden shadow-sm dark:shadow-none">
+        <div className="px-6 py-4 border-b border-slate-100 dark:border-white/[0.06] flex items-center gap-2">
+          <Zap size={17} className="text-yellow-500 dark:text-yellow-400" />
+          <h3 className="text-sm font-bold text-slate-900 dark:text-white">Per-device — this week</h3>
         </div>
         <div className="overflow-x-auto">
           <table className="min-w-full text-sm">
             <thead>
-              <tr className="bg-slate-50 text-left">
-                <th className="py-3 px-6 text-xs font-semibold uppercase tracking-wide text-slate-500">Device</th>
-                <th className="py-3 px-4 text-xs font-semibold uppercase tracking-wide text-slate-500">Room</th>
-                <th className="py-3 px-4 text-xs font-semibold uppercase tracking-wide text-slate-500">Type</th>
-                <th className="py-3 px-4 text-xs font-semibold uppercase tracking-wide text-slate-500">Status</th>
-                <th className="py-3 px-6 text-xs font-semibold uppercase tracking-wide text-slate-500 text-right">kWh (week)</th>
+              <tr className="bg-slate-50 dark:bg-white/[0.02]">
+                <th className="py-3 px-6 text-left text-xs font-bold uppercase tracking-widest text-slate-400 dark:text-white/30">Device</th>
+                <th className="py-3 px-4 text-left text-xs font-bold uppercase tracking-widest text-slate-400 dark:text-white/30">Room</th>
+                <th className="py-3 px-4 text-left text-xs font-bold uppercase tracking-widest text-slate-400 dark:text-white/30">Type</th>
+                <th className="py-3 px-4 text-left text-xs font-bold uppercase tracking-widest text-slate-400 dark:text-white/30">Status</th>
+                <th className="py-3 px-6 text-right text-xs font-bold uppercase tracking-widest text-slate-400 dark:text-white/30">kWh (week)</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100">
+            <tbody className="divide-y divide-slate-100 dark:divide-white/[0.04]">
               {data.rooms.flatMap((room) =>
                 room.devices.map((d) => (
-                  <tr key={d.id} className="hover:bg-slate-50 transition">
-                    <td className="py-3 px-6 font-medium text-slate-900">{d.name}</td>
-                    <td className="py-3 px-4 text-slate-500">{room.name}</td>
-                    <td className="py-3 px-4 text-slate-500">{d.type.replace(/_/g, ' ')}</td>
-                    <td className="py-3 px-4">
-                      <span className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold ${
-                        d.status ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-500'
+                  <tr key={d.id} className="hover:bg-slate-50 dark:hover:bg-white/[0.03] transition">
+                    <td className="py-3.5 px-6 font-semibold text-slate-800 dark:text-white/90">{d.name}</td>
+                    <td className="py-3.5 px-4 text-slate-400 dark:text-white/45">{room.name}</td>
+                    <td className="py-3.5 px-4 text-slate-400 dark:text-white/45">{d.type.replace(/_/g, ' ')}</td>
+                    <td className="py-3.5 px-4">
+                      <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold ${
+                        d.status
+                          ? 'bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-500/20'
+                          : 'bg-slate-100 dark:bg-white/[0.05] text-slate-400 dark:text-white/30 border border-slate-200 dark:border-white/[0.06]'
                       }`}>
-                        <span className={`w-1.5 h-1.5 rounded-full ${d.status ? 'bg-emerald-500 animate-pulse' : 'bg-slate-300'}`} />
+                        <span className={`w-1.5 h-1.5 rounded-full ${d.status ? 'bg-emerald-500 animate-pulse' : 'bg-slate-300 dark:bg-white/20'}`} />
                         {d.status ? 'ON' : 'OFF'}
                       </span>
                     </td>
-                    <td className="py-3 px-6 text-slate-900 font-mono text-right">
+                    <td className="py-3.5 px-6 text-slate-600 dark:text-white/70 font-mono text-right text-xs">
                       {d.weekKwh.toFixed(4)}
                     </td>
                   </tr>

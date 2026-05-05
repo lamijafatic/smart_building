@@ -32,13 +32,14 @@ export const dashboardService = {
     const todayStart = startOfDay(now);
     const weekStart = startOfWeek(now);
     const monthStart = startOfMonth(now);
+    const chartStart = startOfDay(new Date(now.getTime() - 6 * 24 * 60 * 60 * 1000));
 
-    const [totalDay, totalWeek, totalMonth, perDeviceWeek, allDevicesWeek] = await Promise.all([
+    const [totalDay, totalWeek, totalMonth, perDeviceWeek, allDevicesChart] = await Promise.all([
       energyDataRepository.sumByApartmentInRange(apartmentId, todayStart, now),
       energyDataRepository.sumByApartmentInRange(apartmentId, weekStart, now),
       energyDataRepository.sumByApartmentInRange(apartmentId, monthStart, now),
       energyDataRepository.sumPerDeviceInApartment(apartmentId, weekStart, now),
-      energyDataRepository.readingsByApartmentInRange(apartmentId, weekStart, now),
+      energyDataRepository.readingsByApartmentInRange(apartmentId, chartStart, now),
     ]);
 
     const deviceUsageMap = new Map<number, number>();
@@ -63,10 +64,13 @@ export const dashboardService = {
     for (let i = 6; i >= 0; i--) {
       const dayStart = startOfDay(new Date(now.getTime() - i * 24 * 60 * 60 * 1000));
       const dayEnd = new Date(dayStart.getTime() + 24 * 60 * 60 * 1000);
-      const total = allDevicesWeek
+      const total = allDevicesChart
         .filter((r) => r.timestamp >= dayStart && r.timestamp < dayEnd)
         .reduce((s, r) => s + r.valueKwh, 0);
-      days.push({ date: dayStart.toISOString().slice(0, 10), kwh: Number(total.toFixed(3)) });
+      const y = dayStart.getFullYear();
+      const mo = String(dayStart.getMonth() + 1).padStart(2, '0');
+      const d = String(dayStart.getDate()).padStart(2, '0');
+      days.push({ date: `${y}-${mo}-${d}`, kwh: Number(total.toFixed(3)) });
     }
 
     return {

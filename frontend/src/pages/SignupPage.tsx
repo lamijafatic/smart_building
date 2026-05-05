@@ -1,13 +1,14 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { Building2, Mail, Lock, ArrowRight } from 'lucide-react';
+import { Building2, Mail, Lock, User, ArrowRight } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
-export function LoginPage() {
+export function SignupPage() {
   const navigate = useNavigate();
-  const { login } = useAuth();
-  const [email, setEmail] = useState('demo@smartbuilding.test');
-  const [password, setPassword] = useState('demo1234');
+  const { register } = useAuth();
+  const [name, setName] = useState('');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
@@ -16,10 +17,11 @@ export function LoginPage() {
     setError(null);
     setSubmitting(true);
     try {
-      await login(email, password);
+      await register(email, password, name);
       navigate('/dashboard');
-    } catch {
-      setError('Invalid email or password.');
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      setError(msg.includes('already') ? 'An account with this email already exists.' : 'Registration failed. Please try again.');
     } finally {
       setSubmitting(false);
     }
@@ -35,11 +37,11 @@ export function LoginPage() {
         {/* Subtle grid */}
         <svg className="absolute inset-0 w-full h-full pointer-events-none" style={{ opacity: 0.045 }} aria-hidden="true">
           <defs>
-            <pattern id="login-grid" width="52" height="52" patternUnits="userSpaceOnUse">
+            <pattern id="signup-grid" width="52" height="52" patternUnits="userSpaceOnUse">
               <path d="M 52 0 L 0 0 0 52" fill="none" stroke="white" strokeWidth="0.8" />
             </pattern>
           </defs>
-          <rect width="100%" height="100%" fill="url(#login-grid)" />
+          <rect width="100%" height="100%" fill="url(#signup-grid)" />
         </svg>
 
         {/* Glow orbs */}
@@ -90,8 +92,8 @@ export function LoginPage() {
             <line x1="196" y1="490" x2="336" y2="525" />
             <line x1="392" y1="210" x2="448" y2="385" />
             <line x1="448" y1="385" x2="336" y2="525" />
-            <line x1="56" y1="420" x2="196" y2="490" />
-            <line x1="112" y1="210" x2="56" y2="420" />
+            <line x1="56"  y1="420" x2="196" y2="490" />
+            <line x1="112" y1="210" x2="56"  y2="420" />
             <line x1="392" y1="210" x2="476" y2="168" />
             <line x1="252" y1="315" x2="280" y2="168" />
           </g>
@@ -106,14 +108,12 @@ export function LoginPage() {
             <circle cx="476" cy="168" r="3" fill="rgba(250,204,21,0.3)" />
             <circle cx="280" cy="168" r="3" fill="rgba(250,204,21,0.3)" />
           </g>
-          {/* Pulsing ring on hub node */}
           <circle cx="252" cy="315" r="18" stroke="rgba(250,204,21,0.18)" strokeWidth="1.5" fill="none" />
           <circle cx="252" cy="315" r="30" stroke="rgba(250,204,21,0.08)" strokeWidth="1" fill="none" />
         </svg>
 
         {/* Panel content */}
         <div className="relative z-10 flex flex-col justify-between h-full p-14">
-          {/* Logo */}
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl bg-yellow-400 flex items-center justify-center shadow-lg shadow-yellow-400/20">
               <Building2 size={18} className="text-[#080810]" />
@@ -121,21 +121,19 @@ export function LoginPage() {
             <span className="text-white font-black text-lg tracking-tight">ISBS</span>
           </div>
 
-          {/* Headline */}
           <div>
             <p className="text-yellow-400/60 text-xs font-bold tracking-[0.2em] uppercase mb-5">
               Smart Building Platform
             </p>
             <h2 className="text-[3.2rem] font-black text-white leading-[1.05] mb-6">
-              Intelligent<br />Spaces,<br />
-              <span className="text-yellow-400">Seamless Living</span>
+              Join the<br />future of<br />
+              <span className="text-yellow-400">Smart Living</span>
             </h2>
             <p className="text-white/30 text-[0.95rem] leading-relaxed max-w-[300px]">
-              Monitor energy, manage devices, and control every room — all from one unified dashboard.
+              Create your account and start managing your building with real-time insights and full control.
             </p>
           </div>
 
-          {/* Stats */}
           <div className="flex items-center gap-7">
             <div>
               <div className="text-white font-black text-2xl">24/7</div>
@@ -157,7 +155,7 @@ export function LoginPage() {
 
       {/* ── Right form panel ── */}
       <div className="flex-1 flex flex-col items-center justify-center p-8 bg-white dark:bg-[#07070f]">
-        {/* Mobile logo (hidden on desktop) */}
+        {/* Mobile logo */}
         <div className="lg:hidden mb-10 text-center">
           <div className="w-14 h-14 rounded-2xl bg-yellow-400 flex items-center justify-center mx-auto mb-3 shadow-xl shadow-yellow-400/20">
             <Building2 size={26} className="text-[#080810]" />
@@ -167,10 +165,28 @@ export function LoginPage() {
         </div>
 
         <div className="w-full max-w-sm">
-          <h2 className="text-2xl font-black text-slate-900 dark:text-white mb-1">Welcome back</h2>
-          <p className="text-slate-400 dark:text-white/40 text-sm mb-8">Sign in to manage your building</p>
+          <h2 className="text-2xl font-black text-slate-900 dark:text-white mb-1">Create an account</h2>
+          <p className="text-slate-400 dark:text-white/40 text-sm mb-8">Join ISBS and start managing your space</p>
 
           <form onSubmit={handleSubmit} className="space-y-5">
+            <div>
+              <label htmlFor="name" className="block text-xs font-bold text-slate-400 dark:text-white/50 uppercase tracking-widest mb-2">
+                Full name
+              </label>
+              <div className="relative">
+                <User size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 dark:text-white/30" />
+                <input
+                  id="name"
+                  type="text"
+                  required
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  className="w-full rounded-xl bg-slate-50 dark:bg-white/[0.06] border border-slate-200 dark:border-white/[0.1] pl-10 pr-4 py-3 text-sm text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-white/25 focus:outline-none focus:border-yellow-400 dark:focus:border-yellow-400/50 focus:bg-white dark:focus:bg-white/[0.08] transition"
+                  placeholder="Your name"
+                />
+              </div>
+            </div>
+
             <div>
               <label htmlFor="email" className="block text-xs font-bold text-slate-400 dark:text-white/50 uppercase tracking-widest mb-2">
                 Email address
@@ -199,10 +215,11 @@ export function LoginPage() {
                   id="password"
                   type="password"
                   required
+                  minLength={6}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   className="w-full rounded-xl bg-slate-50 dark:bg-white/[0.06] border border-slate-200 dark:border-white/[0.1] pl-10 pr-4 py-3 text-sm text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-white/25 focus:outline-none focus:border-yellow-400 dark:focus:border-yellow-400/50 focus:bg-white dark:focus:bg-white/[0.08] transition"
-                  placeholder="••••••••"
+                  placeholder="Min. 6 characters"
                 />
               </div>
             </div>
@@ -224,11 +241,11 @@ export function LoginPage() {
                     <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                     <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
                   </svg>
-                  Signing in...
+                  Creating account...
                 </>
               ) : (
                 <>
-                  Sign In
+                  Create Account
                   <ArrowRight size={15} />
                 </>
               )}
@@ -236,9 +253,9 @@ export function LoginPage() {
           </form>
 
           <p className="text-center text-sm text-slate-400 dark:text-white/30 mt-6">
-            Don't have an account?{' '}
-            <Link to="/signup" className="text-yellow-600 dark:text-yellow-400 font-semibold hover:underline">
-              Sign up
+            Already have an account?{' '}
+            <Link to="/login" className="text-yellow-600 dark:text-yellow-400 font-semibold hover:underline">
+              Sign in
             </Link>
           </p>
 

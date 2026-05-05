@@ -1,29 +1,15 @@
 import { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import {
-  LineChart,
-  Line,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
+  LineChart, Line, XAxis, YAxis, CartesianGrid,
+  Tooltip, ResponsiveContainer,
 } from 'recharts';
 import {
-  ArrowLeft,
-  Lightbulb,
-  Wind,
-  Tv,
-  Refrigerator,
-  WashingMachine,
-  Waves,
-  Thermometer,
-  Plug,
-  Zap,
-  Clock,
-  BarChart3,
+  ArrowLeft, Lightbulb, Wind, Tv, Refrigerator,
+  WashingMachine, Waves, Thermometer, Plug, Zap, Clock, BarChart3,
 } from 'lucide-react';
 import { devicesApi } from '../api/devices';
+import { useTheme } from '../contexts/ThemeContext';
 import type { Device, EnergyDataPoint } from '../types';
 
 function deviceIcon(type: string, size = 24) {
@@ -45,12 +31,12 @@ function ToggleSwitch({ on, onToggle }: { on: boolean; onToggle: () => void }) {
     <button
       onClick={onToggle}
       aria-label={on ? 'Turn off' : 'Turn on'}
-      className={`relative inline-flex h-7 w-14 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors focus:outline-none focus:ring-2 focus:ring-brand-500 focus:ring-offset-1 ${
-        on ? 'bg-brand-600' : 'bg-slate-200'
+      className={`relative inline-flex h-7 w-14 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-all duration-300 focus:outline-none ${
+        on ? 'bg-yellow-400 shadow-lg shadow-yellow-400/25' : 'bg-slate-200 dark:bg-white/10'
       }`}
     >
       <span
-        className={`pointer-events-none inline-block h-6 w-6 transform rounded-full bg-white shadow-md transition-transform ${
+        className={`pointer-events-none inline-block h-6 w-6 transform rounded-full bg-white shadow-md transition-transform duration-300 ${
           on ? 'translate-x-7' : 'translate-x-0'
         }`}
       />
@@ -60,10 +46,19 @@ function ToggleSwitch({ on, onToggle }: { on: boolean; onToggle: () => void }) {
 
 export function DeviceDetailPage() {
   const { id } = useParams<{ id: string }>();
+  const { isDark } = useTheme();
   const [device, setDevice] = useState<Device | null>(null);
   const [history, setHistory] = useState<EnergyDataPoint[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+
+  const chartStyle = {
+    grid: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.06)',
+    axis: isDark ? 'rgba(255,255,255,0.25)' : 'rgba(0,0,0,0.35)',
+    tooltip: isDark
+      ? { background: '#0d0d1a', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 10, fontSize: 12, color: '#fff' }
+      : { background: '#ffffff', border: '1px solid rgba(0,0,0,0.08)', borderRadius: 10, fontSize: 12, color: '#0f172a' },
+  };
 
   async function load() {
     if (!id) return;
@@ -100,7 +95,7 @@ export function DeviceDetailPage() {
 
   if (error) {
     return (
-      <div className="bg-red-50 text-red-700 border border-red-200 rounded-xl p-5 text-sm">
+      <div className="bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/20 text-red-600 dark:text-red-400 rounded-2xl p-5 text-sm">
         {error}
       </div>
     );
@@ -109,18 +104,16 @@ export function DeviceDetailPage() {
   if (loading || !device) {
     return (
       <div className="space-y-6 animate-pulse">
-        <div className="h-5 bg-slate-200 rounded w-24" />
-        <div className="h-40 bg-slate-200 rounded-xl" />
-        <div className="h-80 bg-slate-200 rounded-xl" />
+        <div className="h-5 bg-slate-200 dark:bg-white/[0.06] rounded w-24" />
+        <div className="h-40 bg-slate-200 dark:bg-white/[0.06] rounded-2xl" />
+        <div className="h-80 bg-slate-200 dark:bg-white/[0.06] rounded-2xl" />
       </div>
     );
   }
 
   const chartData = history.map((p) => ({
     time: new Date(p.timestamp).toLocaleString([], {
-      month: 'short',
-      day: 'numeric',
-      hour: '2-digit',
+      month: 'short', day: 'numeric', hour: '2-digit',
     }),
     kwh: Number(p.valueKwh.toFixed(4)),
   }));
@@ -131,132 +124,125 @@ export function DeviceDetailPage() {
     <div className="space-y-6">
       <Link
         to="/devices"
-        className="inline-flex items-center gap-1.5 text-sm text-slate-500 hover:text-slate-900 transition"
+        className="inline-flex items-center gap-1.5 text-sm text-slate-400 dark:text-white/40 hover:text-slate-900 dark:hover:text-white transition"
       >
-        <ArrowLeft size={16} />
+        <ArrowLeft size={15} />
         Back to Devices
       </Link>
 
-      <div className="bg-white rounded-xl border border-slate-200 p-6 shadow-sm">
+      <div className={`bg-white dark:bg-white/[0.03] rounded-2xl border p-6 shadow-sm dark:shadow-none transition-all ${
+        device.status ? 'border-yellow-300 dark:border-yellow-400/25' : 'border-slate-200 dark:border-white/[0.08]'
+      }`}>
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div className="flex items-center gap-4">
-            <div className={`w-14 h-14 rounded-xl flex items-center justify-center ${
-              device.status ? 'bg-brand-100 text-brand-600' : 'bg-slate-100 text-slate-400'
+            <div className={`w-14 h-14 rounded-2xl flex items-center justify-center ${
+              device.status
+                ? 'bg-yellow-100 dark:bg-yellow-400/10 text-yellow-600 dark:text-yellow-400'
+                : 'bg-slate-100 dark:bg-white/[0.06] text-slate-400 dark:text-white/35'
             }`}>
-              {deviceIcon(device.type, 28)}
+              {deviceIcon(device.type, 26)}
             </div>
             <div>
-              <h2 className="text-xl font-bold text-slate-900">{device.name}</h2>
-              <p className="text-sm text-slate-500 mt-0.5">
+              <h2 className="text-xl font-black text-slate-900 dark:text-white">{device.name}</h2>
+              <p className="text-sm text-slate-400 dark:text-white/40 mt-0.5">
                 {device.room?.name}
                 &nbsp;&middot;&nbsp;
                 {device.type.replace(/_/g, ' ')}
                 &nbsp;&middot;&nbsp;
-                {device.powerWatts} W rated
+                {device.powerWatts} W
               </p>
             </div>
           </div>
           <div className="flex items-center gap-4">
-            <span className={`text-sm font-semibold ${device.status ? 'text-emerald-600' : 'text-slate-400'}`}>
+            <span className={`text-sm font-black ${device.status ? 'text-yellow-500 dark:text-yellow-400' : 'text-slate-300 dark:text-white/30'}`}>
               {device.status ? 'ON' : 'OFF'}
             </span>
             <ToggleSwitch on={device.status} onToggle={toggle} />
           </div>
         </div>
 
-        <div className="mt-6 grid grid-cols-2 sm:grid-cols-4 gap-4">
-          <div className="bg-slate-50 rounded-lg p-3">
-            <p className="text-xs text-slate-500 mb-1">Status</p>
-            <span className={`inline-flex items-center gap-1 text-sm font-semibold ${
-              device.status ? 'text-emerald-600' : 'text-slate-500'
-            }`}>
-              <span className={`w-2 h-2 rounded-full ${device.status ? 'bg-emerald-500 animate-pulse' : 'bg-slate-300'}`} />
-              {device.status ? 'Active' : 'Inactive'}
-            </span>
-          </div>
-          <div className="bg-slate-50 rounded-lg p-3">
-            <p className="text-xs text-slate-500 mb-1">Rated Power</p>
-            <p className="text-sm font-semibold text-slate-800">{device.powerWatts} W</p>
-          </div>
-          <div className="bg-slate-50 rounded-lg p-3">
-            <p className="text-xs text-slate-500 mb-1">Type</p>
-            <p className="text-sm font-semibold text-slate-800">{device.type.replace(/_/g, ' ')}</p>
-          </div>
-          <div className="bg-slate-50 rounded-lg p-3">
-            <p className="text-xs text-slate-500 mb-1">Room</p>
-            <p className="text-sm font-semibold text-slate-800">{device.room?.name ?? '—'}</p>
-          </div>
+        <div className="mt-6 grid grid-cols-2 sm:grid-cols-4 gap-3">
+          {[
+            { label: 'Status', value: device.status ? 'Active' : 'Inactive', active: device.status },
+            { label: 'Rated Power', value: `${device.powerWatts} W`, active: false },
+            { label: 'Type', value: device.type.replace(/_/g, ' '), active: false },
+            { label: 'Room', value: device.room?.name ?? '—', active: false },
+          ].map((item) => (
+            <div key={item.label} className="bg-slate-50 dark:bg-white/[0.03] border border-slate-200 dark:border-white/[0.06] rounded-xl p-3">
+              <p className="text-xs text-slate-400 dark:text-white/30 mb-1.5">{item.label}</p>
+              <p className={`text-sm font-bold ${item.active ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-800 dark:text-white/80'}`}>
+                {item.active !== undefined && item.label === 'Status' && (
+                  <span className="inline-flex items-center gap-1.5">
+                    <span className={`w-1.5 h-1.5 rounded-full ${device.status ? 'bg-emerald-500 animate-pulse' : 'bg-slate-300 dark:bg-white/20'}`} />
+                    {item.value}
+                  </span>
+                )}
+                {item.label !== 'Status' && item.value}
+              </p>
+            </div>
+          ))}
         </div>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <div className="bg-white rounded-xl border border-slate-200 p-5 shadow-sm flex items-center gap-4">
-          <div className="w-10 h-10 rounded-lg bg-brand-50 text-brand-600 flex items-center justify-center shrink-0">
-            <Zap size={18} />
+        <div className="bg-white dark:bg-white/[0.03] border border-slate-200 dark:border-white/[0.08] rounded-2xl p-5 flex items-center gap-4 shadow-sm dark:shadow-none">
+          <div className="w-10 h-10 rounded-xl bg-yellow-50 dark:bg-yellow-400/8 flex items-center justify-center shrink-0">
+            <Zap size={18} className="text-yellow-500 dark:text-yellow-400" />
           </div>
           <div>
-            <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">7-day total</p>
-            <p className="text-xl font-bold text-slate-900 mt-0.5">{totalKwh.toFixed(3)} <span className="text-sm font-normal text-slate-500">kWh</span></p>
+            <p className="text-xs font-bold uppercase tracking-widest text-slate-400 dark:text-white/30">7-day total</p>
+            <p className="text-xl font-black text-slate-900 dark:text-white mt-0.5 tabular-nums">
+              {totalKwh.toFixed(3)} <span className="text-sm font-normal text-slate-400 dark:text-white/35">kWh</span>
+            </p>
           </div>
         </div>
-        <div className="bg-white rounded-xl border border-slate-200 p-5 shadow-sm flex items-center gap-4">
-          <div className="w-10 h-10 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center shrink-0">
-            <BarChart3 size={18} />
+        <div className="bg-white dark:bg-white/[0.03] border border-slate-200 dark:border-white/[0.08] rounded-2xl p-5 flex items-center gap-4 shadow-sm dark:shadow-none">
+          <div className="w-10 h-10 rounded-xl bg-blue-50 dark:bg-blue-400/8 flex items-center justify-center shrink-0">
+            <BarChart3 size={18} className="text-blue-500 dark:text-blue-400" />
           </div>
           <div>
-            <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Readings</p>
-            <p className="text-xl font-bold text-slate-900 mt-0.5">{history.length}</p>
+            <p className="text-xs font-bold uppercase tracking-widest text-slate-400 dark:text-white/30">Readings</p>
+            <p className="text-xl font-black text-slate-900 dark:text-white mt-0.5 tabular-nums">{history.length}</p>
           </div>
         </div>
-        <div className="bg-white rounded-xl border border-slate-200 p-5 shadow-sm flex items-center gap-4">
-          <div className="w-10 h-10 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0">
-            <Clock size={18} />
+        <div className="bg-white dark:bg-white/[0.03] border border-slate-200 dark:border-white/[0.08] rounded-2xl p-5 flex items-center gap-4 shadow-sm dark:shadow-none">
+          <div className="w-10 h-10 rounded-xl bg-emerald-50 dark:bg-emerald-400/8 flex items-center justify-center shrink-0">
+            <Clock size={18} className="text-emerald-600 dark:text-emerald-400" />
           </div>
           <div>
-            <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Last reading</p>
-            <p className="text-sm font-bold text-slate-900 mt-0.5">
+            <p className="text-xs font-bold uppercase tracking-widest text-slate-400 dark:text-white/30">Last reading</p>
+            <p className="text-sm font-bold text-slate-900 dark:text-white mt-0.5">
               {history.length > 0
-                ? new Date(history[history.length - 1].timestamp).toLocaleString([], { hour: '2-digit', minute: '2-digit', day: 'numeric', month: 'short' })
+                ? new Date(history[history.length - 1].timestamp).toLocaleString([], {
+                    hour: '2-digit', minute: '2-digit', day: 'numeric', month: 'short',
+                  })
                 : '—'}
             </p>
           </div>
         </div>
       </div>
 
-      <section className="bg-white rounded-xl border border-slate-200 p-6 shadow-sm">
-        <h3 className="text-base font-semibold text-slate-900 mb-4">Energy usage history — last 7 days</h3>
+      <section className="bg-white dark:bg-white/[0.03] border border-slate-200 dark:border-white/[0.08] rounded-2xl p-6 shadow-sm dark:shadow-none">
+        <h3 className="text-sm font-bold text-slate-900 dark:text-white mb-5">Energy usage — last 7 days</h3>
         <div className="h-64">
           {history.length === 0 ? (
-            <div className="h-full flex flex-col items-center justify-center text-slate-400">
-              <BarChart3 size={32} className="mb-2 opacity-40" />
+            <div className="h-full flex flex-col items-center justify-center text-slate-300 dark:text-white/20">
+              <BarChart3 size={30} className="mb-2 opacity-40" />
               <p className="text-sm">No data recorded yet.</p>
               <p className="text-xs mt-1">Turn this device on to start tracking.</p>
             </div>
           ) : (
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={chartData} margin={{ top: 4, right: 8, bottom: 0, left: 0 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
-                <XAxis dataKey="time" stroke="#94a3b8" fontSize={11} tickLine={false} />
-                <YAxis stroke="#94a3b8" fontSize={11} unit=" kWh" tickLine={false} axisLine={false} />
-                <Tooltip
-                  contentStyle={{ borderRadius: 8, border: '1px solid #e2e8f0', fontSize: 12 }}
-                  formatter={(v: number) => [`${v.toFixed(4)} kWh`, 'Reading']}
-                />
-                <Line
-                  type="monotone"
-                  dataKey="kwh"
-                  stroke="#dc6803"
-                  strokeWidth={2.5}
-                  dot={false}
-                  activeDot={{ r: 5 }}
-                />
+                <CartesianGrid strokeDasharray="3 3" stroke={chartStyle.grid} />
+                <XAxis dataKey="time" stroke={chartStyle.axis} fontSize={11} tickLine={false} />
+                <YAxis stroke={chartStyle.axis} fontSize={11} unit=" kWh" tickLine={false} axisLine={false} />
+                <Tooltip contentStyle={chartStyle.tooltip} formatter={(v: number) => [`${v.toFixed(4)} kWh`, 'Reading']} />
+                <Line type="monotone" dataKey="kwh" stroke="#facc15" strokeWidth={2.5} dot={false} activeDot={{ r: 5 }} />
               </LineChart>
             </ResponsiveContainer>
           )}
         </div>
-        {history.length > 0 && (
-          <p className="text-xs text-slate-400 mt-2 text-right">Auto-refreshes every 30 seconds</p>
-        )}
       </section>
     </div>
   );

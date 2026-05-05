@@ -7,7 +7,23 @@ export const loginSchema = z.object({
   password: z.string().min(1),
 });
 
+export const registerSchema = z.object({
+  email: z.string().email(),
+  password: z.string().min(6),
+  name: z.string().min(1),
+});
+
 export const authController = {
+  async register(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { email, password, name } = req.body as z.infer<typeof registerSchema>;
+      const result = await authService.register(email, password, name);
+      res.status(201).json(result);
+    } catch (e) {
+      next(e);
+    }
+  },
+
   async login(req: Request, res: Response, next: NextFunction) {
     try {
       const { email, password } = req.body as z.infer<typeof loginSchema>;
