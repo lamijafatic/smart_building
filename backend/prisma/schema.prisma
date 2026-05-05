@@ -1,0 +1,100 @@
+// Smart Building System - Prisma Schema
+//
+// For local development we use SQLite. For deployment switch the
+// provider below to "postgresql" and update DATABASE_URL in .env.
+//
+// Architectural pattern: Layered Architecture
+// This schema is the source of truth for the Data Access layer.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           Int         @id @default(autoincrement())
+  email        String      @unique
+  passwordHash String
+  name         String
+  role         String      @default("RESIDENT") // RESIDENT | ADMIN
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+
+  apartments   Apartment[]
+
+  @@map("users")
+}
+
+model Building {
+  id         Int         @id @default(autoincrement())
+  name       String
+  location   String
+  createdAt  DateTime    @default(now())
+  updatedAt  DateTime    @updatedAt
+
+  apartments Apartment[]
+
+  @@map("buildings")
+}
+
+model Apartment {
+  id         Int      @id @default(autoincrement())
+  number     String
+  area       Float
+  buildingId Int
+  ownerId    Int
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  building   Building @relation(fields: [buildingId], references: [id], onDelete: Cascade)
+  owner      User     @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  rooms      Room[]
+
+  @@map("apartments")
+}
+
+model Room {
+  id          Int      @id @default(autoincrement())
+  name        String
+  type        String   // LIVING_ROOM | BEDROOM | KITCHEN | BATHROOM | OFFICE | OTHER
+  apartmentId Int
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  apartment   Apartment @relation(fields: [apartmentId], references: [id], onDelete: Cascade)
+  devices     Device[]
+
+  @@map("rooms")
+}
+
+model Device {
+  id         Int       @id @default(autoincrement())
+  name       String
+  type       String    // LIGHT | THERMOSTAT | OUTLET | AC | TV | WASHING_MACHINE | OTHER
+  status     Boolean   @default(false) // true = ON, false = OFF
+  powerWatts Float     @default(0)     // rated power in watts when ON
+  roomId     Int
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+
+  room       Room        @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  energyData EnergyData[]
+
+  @@map("devices")
+}
+
+model EnergyData {
+  id        Int      @id @default(autoincrement())
+  deviceId  Int
+  timestamp DateTime @default(now())
+  valueKwh  Float    // energy consumed in this reading interval (kWh)
+
+  device    Device   @relation(fields: [deviceId], references: [id], onDelete: Cascade)
+
+  @@index([deviceId, timestamp])
+  @@map("energy_data")
+}
