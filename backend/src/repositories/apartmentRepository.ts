@@ -17,7 +17,7 @@ export const apartmentRepository = {
   create: (data: { number: string; area: number; buildingId: number; ownerId: number }) =>
     prisma.apartment.create({ data }),
 
-  update: (id: number, data: { number?: string; area?: number }) =>
+  update: (id: number, data: { number?: string; area?: number; activeMode?: string }) =>
     prisma.apartment.update({ where: { id }, data }),
 
   remove: (id: number) => prisma.apartment.delete({ where: { id } }),

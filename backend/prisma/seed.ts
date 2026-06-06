@@ -1,4 +1,5 @@
 import bcrypt from 'bcrypt';
+import type { Device } from '@prisma/client';
 import { prisma } from '../src/db/prisma';
 import { specFor } from '../src/utils/deviceFactory';
 
@@ -17,7 +18,7 @@ async function main() {
     data: {
       email: 'demo@smartbuilding.test',
       passwordHash,
-      name: 'Demo Resident',
+      name: 'Lamija Fatić',
       role: 'RESIDENT',
     },
   });
@@ -60,7 +61,7 @@ async function main() {
     { name: 'Washing Machine', type: 'WASHING_MACHINE', roomIndex: 3, status: false },
   ];
 
-  const devices = [];
+  const devices: Device[] = [];
   for (const d of deviceDefs) {
     const spec = specFor(d.type);
     const created = await prisma.device.create({

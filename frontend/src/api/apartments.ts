@@ -10,4 +10,8 @@ export const apartmentsApi = {
     const res = await api.get<Apartment>(`/apartments/${id}`);
     return res.data;
   },
+  async setMode(id: number, mode: 'HOME' | 'AWAY' | 'NONE') {
+    const res = await api.patch<{ activeMode: string }>(`/apartments/${id}/mode`, { mode });
+    return res.data;
+  },
 };

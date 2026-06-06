@@ -1,8 +1,5 @@
 // Smart Building System - Prisma Schema
 //
-// For local development we use SQLite. For deployment switch the
-// provider below to "postgresql" and update DATABASE_URL in .env.
-//
 // Architectural pattern: Layered Architecture
 // This schema is the source of truth for the Data Access layer.
 
@@ -42,17 +39,19 @@ model Building {
 }
 
 model Apartment {
-  id         Int      @id @default(autoincrement())
-  number     String
-  area       Float
-  buildingId Int
-  ownerId    Int
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+  id          Int      @id @default(autoincrement())
+  number      String
+  area        Float
+  buildingId  Int
+  ownerId     Int
+  activeMode  String   @default("NONE") // NONE | HOME | AWAY
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 
-  building   Building @relation(fields: [buildingId], references: [id], onDelete: Cascade)
-  owner      User     @relation(fields: [ownerId], references: [id], onDelete: Cascade)
-  rooms      Room[]
+  building      Building       @relation(fields: [buildingId], references: [id], onDelete: Cascade)
+  owner         User           @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  rooms         Room[]
+  notifications Notification[]
 
   @@map("apartments")
 }
@@ -72,17 +71,18 @@ model Room {
 }
 
 model Device {
-  id         Int       @id @default(autoincrement())
+  id         Int        @id @default(autoincrement())
   name       String
-  type       String    // LIGHT | THERMOSTAT | OUTLET | AC | TV | WASHING_MACHINE | OTHER
-  status     Boolean   @default(false) // true = ON, false = OFF
-  powerWatts Float     @default(0)     // rated power in watts when ON
+  type       String     // LIGHT | THERMOSTAT | OUTLET | AC | TV | WASHING_MACHINE | OTHER
+  status     Boolean    @default(false)
+  powerWatts Float      @default(0)
   roomId     Int
-  createdAt  DateTime  @default(now())
-  updatedAt  DateTime  @updatedAt
+  createdAt  DateTime   @default(now())
+  updatedAt  DateTime   @updatedAt
 
   room       Room        @relation(fields: [roomId], references: [id], onDelete: Cascade)
   energyData EnergyData[]
+  schedules  Schedule[]
 
   @@map("devices")
 }
@@ -91,10 +91,38 @@ model EnergyData {
   id        Int      @id @default(autoincrement())
   deviceId  Int
   timestamp DateTime @default(now())
-  valueKwh  Float    // energy consumed in this reading interval (kWh)
+  valueKwh  Float
 
   device    Device   @relation(fields: [deviceId], references: [id], onDelete: Cascade)
 
   @@index([deviceId, timestamp])
   @@map("energy_data")
+}
+
+model Schedule {
+  id        Int      @id @default(autoincrement())
+  deviceId  Int
+  startTime String   // "HH:MM" 24h format
+  endTime   String   // "HH:MM" 24h format
+  days      String   // JSON array: ["MON","TUE","WED","THU","FRI","SAT","SUN"]
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  device    Device   @relation(fields: [deviceId], references: [id], onDelete: Cascade)
+
+  @@map("schedules")
+}
+
+model Notification {
+  id          Int      @id @default(autoincrement())
+  apartmentId Int
+  message     String
+  type        String   @default("HIGH_ENERGY") // HIGH_ENERGY | INFO | WARNING
+  read        Boolean  @default(false)
+  createdAt   DateTime @default(now())
+
+  apartment   Apartment @relation(fields: [apartmentId], references: [id], onDelete: Cascade)
+
+  @@map("notifications")
 }

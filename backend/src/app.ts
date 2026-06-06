@@ -9,6 +9,8 @@ import apartmentRoutes from './routes/apartmentRoutes';
 import roomRoutes from './routes/roomRoutes';
 import deviceRoutes from './routes/deviceRoutes';
 import dashboardRoutes from './routes/dashboardRoutes';
+import scheduleRoutes from './routes/scheduleRoutes';
+import notificationRoutes from './routes/notificationRoutes';
 import { errorHandler } from './middleware/errorHandler';
 
 export function createApp() {
@@ -34,6 +36,8 @@ export function createApp() {
   app.use('/api/rooms', roomRoutes);
   app.use('/api/devices', deviceRoutes);
   app.use('/api/dashboard', dashboardRoutes);
+  app.use('/api/schedules', scheduleRoutes);
+  app.use('/api/notifications', notificationRoutes);
 
   app.use(errorHandler);
 
