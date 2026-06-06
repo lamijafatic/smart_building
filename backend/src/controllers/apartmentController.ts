@@ -54,4 +54,14 @@ export const apartmentController = {
       next(e);
     }
   },
+
+  async setMode(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { mode } = z.object({ mode: z.enum(['HOME', 'AWAY', 'NONE']) }).parse(req.body);
+      const data = await apartmentService.setMode(Number(req.params.id), mode, req.user!.userId);
+      res.json(data);
+    } catch (e) {
+      next(e);
+    }
+  },
 };

@@ -11,6 +11,7 @@ export interface Apartment {
   area: number;
   buildingId: number;
   ownerId: number;
+  activeMode?: string;
   building?: Building;
 }
 
