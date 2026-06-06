@@ -11,6 +11,7 @@ import { DevicesPage } from './pages/DevicesPage';
 import { DeviceDetailPage } from './pages/DeviceDetailPage';
 import { RoomsPage } from './pages/RoomsPage';
 import { RoomDetailPage } from './pages/RoomDetailPage';
+import { BuildingPage } from './pages/BuildingPage';
 
 export default function App() {
   return (
@@ -33,6 +34,7 @@ export default function App() {
               <Route path="/devices/:id" element={<DeviceDetailPage />} />
               <Route path="/rooms" element={<RoomsPage />} />
               <Route path="/rooms/:id" element={<RoomDetailPage />} />
+              <Route path="/building" element={<BuildingPage />} />
             </Route>
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>

@@ -6,6 +6,7 @@ import {
   DoorOpen,
   LogOut,
   Building2,
+  Landmark,
   Menu,
   X,
   Sun,
@@ -18,6 +19,7 @@ const navItems = [
   { to: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { to: '/devices', label: 'Devices', icon: Zap },
   { to: '/rooms', label: 'Rooms', icon: DoorOpen },
+  { to: '/building', label: 'Building', icon: Landmark },
 ];
 
 export function Layout() {
