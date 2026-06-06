@@ -49,4 +49,12 @@ export const buildingController = {
       next(e);
     }
   },
+
+  async overview(req: Request, res: Response, next: NextFunction) {
+    try {
+      res.json(await buildingService.getOverview(Number(req.params.id)));
+    } catch (e) {
+      next(e);
+    }
+  },
 };

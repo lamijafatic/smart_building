@@ -15,5 +15,6 @@ router.get('/:id', buildingController.get);
 router.post('/', validateBody(buildingCreateSchema), buildingController.create);
 router.patch('/:id', validateBody(buildingUpdateSchema), buildingController.update);
 router.delete('/:id', buildingController.remove);
+router.get('/:id/overview', buildingController.overview);
 
 export default router;
