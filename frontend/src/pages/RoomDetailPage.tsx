@@ -45,6 +45,12 @@ function ToggleSwitch({ on, onToggle }: { on: boolean; onToggle: () => void }) {
   );
 }
 
+interface BulkScheduleForm {
+  startTime: string;
+  endTime: string;
+  days: string[];
+}
+
 export function RoomDetailPage() {
   const { id } = useParams<{ id: string }>();
   const [room, setRoom] = useState<Room | null>(null);
@@ -59,6 +65,15 @@ export function RoomDetailPage() {
   const [scheduleApplying, setScheduleApplying] = useState(false);
   const [scheduleSuccess, setScheduleSuccess] = useState<string | null>(null);
   const [scheduleError, setScheduleError] = useState<string | null>(null);
+
+  const [showScheduleForm, setShowScheduleForm] = useState(false);
+  const [scheduleForm, setScheduleForm] = useState<BulkScheduleForm>({
+    startTime: '08:00',
+    endTime: '22:00',
+    days: ['MON', 'TUE', 'WED', 'THU', 'FRI'],
+  });
+  const [scheduleLoading, setScheduleLoading] = useState(false);
+  const [scheduleSuccess, setScheduleSuccess] = useState(false);
 
   useEffect(() => {
     if (!id) return;
@@ -122,8 +137,10 @@ export function RoomDetailPage() {
 
   if (error) {
     return (
-      <div className="bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/20 text-red-600 dark:text-red-400 rounded-2xl p-5 text-sm">
-        {error}
+      <div className="space-y-4">
+        <div className="bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/20 text-red-600 dark:text-red-400 rounded-2xl p-5 text-sm">
+          {error}
+        </div>
       </div>
     );
   }
@@ -183,7 +200,7 @@ export function RoomDetailPage() {
             </button>
           )}
         </div>
-      </div>
+      )}
 
       {/* Schedule panel */}
       {showSchedulePanel && (
