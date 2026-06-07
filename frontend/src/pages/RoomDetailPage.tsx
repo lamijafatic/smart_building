@@ -45,6 +45,12 @@ function ToggleSwitch({ on, onToggle }: { on: boolean; onToggle: () => void }) {
   );
 }
 
+interface BulkScheduleForm {
+  startTime: string;
+  endTime: string;
+  days: string[];
+}
+
 export function RoomDetailPage() {
   const { id } = useParams<{ id: string }>();
   const [room, setRoom] = useState<Room | null>(null);
@@ -59,6 +65,15 @@ export function RoomDetailPage() {
   const [scheduleApplying, setScheduleApplying] = useState(false);
   const [scheduleSuccess, setScheduleSuccess] = useState<string | null>(null);
   const [scheduleError, setScheduleError] = useState<string | null>(null);
+
+  const [showScheduleForm, setShowScheduleForm] = useState(false);
+  const [scheduleForm, setScheduleForm] = useState<BulkScheduleForm>({
+    startTime: '08:00',
+    endTime: '22:00',
+    days: ['MON', 'TUE', 'WED', 'THU', 'FRI'],
+  });
+  const [scheduleLoading, setScheduleLoading] = useState(false);
+  const [scheduleSuccess, setScheduleSuccess] = useState(false);
 
   useEffect(() => {
     if (!id) return;
@@ -122,8 +137,10 @@ export function RoomDetailPage() {
 
   if (error) {
     return (
-      <div className="bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/20 text-red-600 dark:text-red-400 rounded-2xl p-5 text-sm">
-        {error}
+      <div className="space-y-4">
+        <div className="bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/20 text-red-600 dark:text-red-400 rounded-2xl p-5 text-sm">
+          {error}
+        </div>
       </div>
     );
   }
@@ -183,7 +200,115 @@ export function RoomDetailPage() {
             </button>
           )}
         </div>
-      </div>
+      )}
+
+      {/* Schedule panel */}
+      {showSchedulePanel && (
+        <div className="bg-white dark:bg-white/[0.03] border border-slate-200 dark:border-white/[0.08] rounded-2xl p-6 shadow-sm dark:shadow-none">
+          <div className="flex items-center justify-between mb-5">
+            <div className="flex items-center gap-2">
+              <CalendarClock size={16} className="text-yellow-500 dark:text-yellow-400" />
+              <h3 className="text-sm font-bold text-slate-900 dark:text-white">Apply schedule to all devices</h3>
+            </div>
+            <button
+              onClick={() => setShowSchedulePanel(false)}
+              className="text-slate-400 dark:text-white/30 hover:text-slate-700 dark:hover:text-white transition"
+            >
+              <X size={16} />
+            </button>
+          </div>
+
+          {/* Day selector */}
+          <div className="mb-4">
+            <p className="text-xs font-bold uppercase tracking-widest text-slate-400 dark:text-white/30 mb-2">Days</p>
+            <div className="flex flex-wrap gap-2">
+              {ALL_DAYS.map((day) => {
+                const active = scheduleDays.includes(day);
+                return (
+                  <button
+                    key={day}
+                    onClick={() => toggleDay(day)}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-bold border transition ${
+                      active
+                        ? 'bg-yellow-400 text-[#080810] border-yellow-400'
+                        : 'bg-transparent text-slate-500 dark:text-white/40 border-slate-200 dark:border-white/[0.1] hover:border-slate-300 dark:hover:border-white/20'
+                    }`}
+                  >
+                    {day}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Time inputs */}
+          <div className="grid grid-cols-2 gap-4 mb-5">
+            <div>
+              <label className="text-xs font-bold uppercase tracking-widest text-slate-400 dark:text-white/30 block mb-1.5">
+                Start time
+              </label>
+              <input
+                type="time"
+                value={scheduleStart}
+                onChange={(e) => setScheduleStart(e.target.value)}
+                className="w-full rounded-xl border border-slate-200 dark:border-white/[0.1] bg-white dark:bg-white/[0.04] text-slate-900 dark:text-white px-3 py-2 text-sm focus:outline-none focus:border-yellow-400 dark:focus:border-yellow-400/50 transition"
+              />
+            </div>
+            <div>
+              <label className="text-xs font-bold uppercase tracking-widest text-slate-400 dark:text-white/30 block mb-1.5">
+                End time
+              </label>
+              <input
+                type="time"
+                value={scheduleEnd}
+                onChange={(e) => setScheduleEnd(e.target.value)}
+                className="w-full rounded-xl border border-slate-200 dark:border-white/[0.1] bg-white dark:bg-white/[0.04] text-slate-900 dark:text-white px-3 py-2 text-sm focus:outline-none focus:border-yellow-400 dark:focus:border-yellow-400/50 transition"
+              />
+            </div>
+          </div>
+
+          {scheduleError && (
+            <p className="text-xs text-red-500 dark:text-red-400 mb-3">{scheduleError}</p>
+          )}
+
+          <div className="flex items-center gap-3">
+            <button
+              onClick={applyScheduleToAll}
+              disabled={scheduleApplying || scheduleDays.length === 0}
+              className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold bg-yellow-400 text-[#080810] hover:bg-yellow-300 transition disabled:opacity-50 disabled:cursor-not-allowed shadow-sm shadow-yellow-400/20"
+            >
+              {scheduleApplying ? 'Applying...' : 'Apply to all devices'}
+            </button>
+            <button
+              onClick={() => setShowSchedulePanel(false)}
+              className="px-4 py-2 rounded-xl text-sm font-semibold text-slate-500 dark:text-white/40 hover:bg-slate-100 dark:hover:bg-white/[0.05] hover:text-slate-800 dark:hover:text-white transition"
+            >
+              Cancel
+            </button>
+          </div>
+          {devices.length > 0 && (
+            <button
+              onClick={() => {
+                setShowSchedulePanel((v) => !v);
+                setScheduleSuccess(null);
+                setScheduleError(null);
+              }}
+              className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold bg-yellow-400 text-[#080810] hover:bg-yellow-300 transition shadow-sm shadow-yellow-400/20 shrink-0"
+            >
+              <CalendarClock size={15} />
+              Schedule Room
+            </button>
+          )}
+        </div>
+      )}
+
+      {/* Schedule success message */}
+      {scheduleSuccess && (
+        <div className="flex items-center gap-3 bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-500/20 text-emerald-700 dark:text-emerald-400 rounded-2xl p-4 text-sm">
+          <CheckCircle size={16} className="shrink-0" />
+          {scheduleSuccess}
+        </div>
+      )}
 
       {/* Schedule panel */}
       {showSchedulePanel && (
