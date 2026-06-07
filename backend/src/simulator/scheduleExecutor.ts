@@ -12,12 +12,14 @@ async function applySchedules(): Promise<void> {
   const schedules = await prisma.schedule.findMany({ where: { active: true } });
   if (schedules.length === 0) return;
 
+  // group by device
   const byDevice = new Map<number, typeof schedules>();
   for (const s of schedules) {
     if (!byDevice.has(s.deviceId)) byDevice.set(s.deviceId, []);
     byDevice.get(s.deviceId)!.push(s);
   }
 
+  // for each device that has schedules, determine ON or OFF
   const updates: Promise<unknown>[] = [];
   for (const [deviceId, devSchedules] of byDevice) {
     const shouldBeOn = devSchedules.some((s) => {
@@ -27,17 +29,18 @@ async function applySchedules(): Promise<void> {
       return currentTime >= s.startTime && currentTime < s.endTime;
     });
     updates.push(
-      prisma.device.update({ where: { id: deviceId }, data: { status: shouldBeOn } }),
+      prisma.device.update({ where: { id: deviceId }, data: { status: shouldBeOn } })
     );
   }
-
   await Promise.all(updates);
-  if (updates.length > 0) {
-    console.log(`[scheduler] applied ${updates.length} device schedule(s) at ${currentTime}`);
-  }
+  console.log(`[scheduler] applied ${byDevice.size} device schedule(s) at ${currentTime}`);
 }
 
 export function startScheduleExecutor(): void {
+  console.log('[scheduler] starting — checking schedules every 60s');
+  // Run immediately, then every 60 seconds
   applySchedules().catch((e) => console.error('[scheduler] error:', e));
-  setInterval(() => applySchedules().catch((e) => console.error('[scheduler] error:', e)), 60_000);
+  setInterval(() => {
+    applySchedules().catch((e) => console.error('[scheduler] error:', e));
+  }, 60_000);
 }

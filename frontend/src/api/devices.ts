@@ -14,6 +14,10 @@ export const devicesApi = {
     const res = await api.patch<Device>(`/devices/${id}/status`, { status });
     return res.data;
   },
+  async create(data: { name: string; type: string; powerWatts: number; roomId: number }) {
+    const res = await api.post<Device>('/devices', data);
+    return res.data;
+  },
   async history(id: number, days = 7) {
     const res = await api.get<EnergyDataPoint[]>(`/devices/${id}/history`, {
       params: { days },

@@ -226,6 +226,7 @@ export function DeviceDetailPage() {
   }
 
   async function handleDeleteSchedule(scheduleId: number) {
+    if (!window.confirm('Are you sure you want to delete this schedule?')) return;
     try {
       await schedulesApi.remove(scheduleId);
       setSchedules((prev) => prev.filter((s) => s.id !== scheduleId));

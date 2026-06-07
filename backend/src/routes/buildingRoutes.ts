@@ -15,5 +15,7 @@ router.get('/:id', buildingController.get);
 router.post('/', validateBody(buildingCreateSchema), buildingController.create);
 router.patch('/:id', validateBody(buildingUpdateSchema), buildingController.update);
 router.delete('/:id', buildingController.remove);
+router.get('/:id/overview', buildingController.overview);
+router.patch('/:id/shared-devices/:deviceId/toggle', buildingController.toggleSharedDevice);
 
 export default router;

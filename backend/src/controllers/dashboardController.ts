@@ -19,4 +19,14 @@ export const dashboardController = {
       next(e);
     }
   },
+
+  async getChart(req: Request, res: Response, next: NextFunction) {
+    try {
+      const apartmentId = Number(req.params.apartmentId);
+      const days = Math.min(90, Math.max(1, Number(req.query.days) || 7));
+      res.json(await dashboardService.getEnergyChart(apartmentId, req.user!.userId, days));
+    } catch (e) {
+      next(e);
+    }
+  },
 };

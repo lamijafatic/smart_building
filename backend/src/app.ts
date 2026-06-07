@@ -11,6 +11,7 @@ import deviceRoutes from './routes/deviceRoutes';
 import dashboardRoutes from './routes/dashboardRoutes';
 import scheduleRoutes from './routes/scheduleRoutes';
 import notificationRoutes from './routes/notificationRoutes';
+import adminRoutes from './routes/adminRoutes';
 import { errorHandler } from './middleware/errorHandler';
 
 export function createApp() {
@@ -38,6 +39,7 @@ export function createApp() {
   app.use('/api/dashboard', dashboardRoutes);
   app.use('/api/schedules', scheduleRoutes);
   app.use('/api/notifications', notificationRoutes);
+  app.use('/api/admin', adminRoutes);
 
   app.use(errorHandler);
 

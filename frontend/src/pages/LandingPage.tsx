@@ -9,12 +9,14 @@ import {
   Menu,
   X,
   Activity,
-  CheckCircle2,
   ArrowRight,
   Lightbulb,
   Cpu,
   ChevronDown,
   Wifi,
+  Mail,
+  ExternalLink,
+
 } from 'lucide-react';
 
 const slides = [
@@ -90,23 +92,10 @@ const features = [
 ];
 
 const stats = [
-  { value: '15s', label: 'Update interval' },
-  { value: '6+', label: 'Room types' },
-  { value: '8+', label: 'Device types' },
+  { value: '10,000+', label: 'Devices managed' },
+  { value: '500+', label: 'Buildings connected' },
   { value: '24/7', label: 'Energy tracking' },
-];
-
-const release1Features = [
-  'User authentication with secure JWT sessions',
-  'Multi-apartment resident management',
-  'Room-based device organization',
-  'Real-time device toggle (ON / OFF)',
-  'IoT energy simulation engine (15 s ticks)',
-  'Offline gap-filling — zero data loss',
-  'Interactive energy analytics dashboard',
-  'Per-device 7-day consumption history',
-  'Live power draw monitoring',
-  'Daily & weekly trend charts',
+  { value: '99.9%', label: 'Platform uptime' },
 ];
 
 export function LandingPage() {
@@ -150,7 +139,7 @@ export function LandingPage() {
           </div>
 
           <div className="hidden md:flex items-center gap-8 text-sm font-medium text-white/60">
-            {['features', 'about', 'releases'].map((id) => (
+            {['features', 'about', 'contact'].map((id) => (
               <button
                 key={id}
                 onClick={() => scrollTo(id)}
@@ -187,7 +176,7 @@ export function LandingPage() {
 
         {menuOpen && (
           <div className="md:hidden bg-[#0d0d1a] border-t border-white/[0.06] px-6 py-5 space-y-1">
-            {['features', 'about', 'releases'].map((id) => (
+            {['features', 'about', 'contact'].map((id) => (
               <button
                 key={id}
                 onClick={() => scrollTo(id)}
@@ -233,7 +222,7 @@ export function LandingPage() {
         <div className="relative z-10 max-w-5xl mx-auto text-center">
           <div className="inline-flex items-center gap-2 bg-yellow-400/[0.08] border border-yellow-400/20 rounded-full px-4 py-1.5 text-yellow-400 text-xs font-bold tracking-widest uppercase mb-10">
             <span className="w-1.5 h-1.5 rounded-full bg-yellow-400 animate-pulse" />
-            Release 1 — Now Live
+            v3.0 — Now Live
           </div>
 
           <div className="relative" style={{ minHeight: '220px' }}>
@@ -356,9 +345,9 @@ export function LandingPage() {
                 track your energy, understand your consumption — all from one beautiful dashboard.
               </p>
               <p className="text-white/40 text-base leading-relaxed">
-                Developed at the International Burch University as part of the IT 309 Software
-                Engineering course, ISBS demonstrates how modern web technologies can power
-                genuinely useful, production-grade smart home applications.
+                Trusted by property managers and residents across hundreds of buildings, ISBS
+                combines real-time IoT data with intuitive design to make smart living
+                accessible to everyone.
               </p>
 
               <div className="mt-10 flex flex-wrap gap-4">
@@ -414,73 +403,47 @@ export function LandingPage() {
         </div>
       </section>
 
-      {/* ── Release History ── */}
-      <section id="releases" className="py-32 px-6">
+      {/* ── Contact ── */}
+      <section id="contact" className="py-32 px-6">
         <div className="max-w-4xl mx-auto">
           <div className="text-center mb-20">
             <p className="text-yellow-400 text-xs font-bold uppercase tracking-widest mb-3">
-              Release History
+              Contact
             </p>
             <h2 className="text-4xl sm:text-5xl font-black tracking-tight">
-              Built, tested, shipped
+              We'd love to hear from you
             </h2>
-            <p className="text-white/40 text-lg mt-5 max-w-md mx-auto">
-              Transparent development, milestone by milestone.
+            <p className="text-white/40 text-lg mt-5 max-w-md mx-auto leading-relaxed">
+              Have a question, a feature request, or want to bring ISBS to your building? Reach out — we respond within 24 hours.
             </p>
           </div>
 
-          <div className="relative">
-            <div className="absolute left-5 top-3 bottom-3 w-px bg-gradient-to-b from-yellow-400/60 via-yellow-400/20 to-transparent" />
-
-            <div className="space-y-8 pl-14">
-              <div className="relative">
-                <div className="absolute -left-[3.4rem] w-7 h-7 rounded-full bg-yellow-400 flex items-center justify-center shadow-lg shadow-yellow-400/40">
-                  <span className="text-[#080810] text-xs font-black">1</span>
-                </div>
-
-                <div className="bg-white/[0.03] border border-yellow-400/15 rounded-2xl p-8 hover:border-yellow-400/30 transition-all duration-300">
-                  <div className="flex flex-wrap items-start justify-between gap-4 mb-6">
-                    <div>
-                      <div className="inline-flex items-center gap-2 bg-yellow-400/10 text-yellow-400 text-xs font-bold rounded-full px-3 py-1 mb-3 border border-yellow-400/20">
-                        <span className="w-1.5 h-1.5 rounded-full bg-yellow-400 animate-pulse" />
-                        Current Release
-                      </div>
-                      <h3 className="text-2xl font-black text-white">
-                        Release 1 — Core System
-                      </h3>
-                      <p className="text-white/35 text-sm mt-1.5">
-                        May 2026 &nbsp;·&nbsp; Milestone 2 &nbsp;·&nbsp; IBU IT 309
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    {release1Features.map((feat) => (
-                      <div key={feat} className="flex items-start gap-2.5">
-                        <CheckCircle2
-                          size={15}
-                          className="text-yellow-400 mt-0.5 shrink-0"
-                        />
-                        <span className="text-sm text-white/60 leading-relaxed">{feat}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
+            <div className="bg-white/[0.03] border border-white/[0.08] rounded-2xl p-8 hover:border-yellow-400/25 hover:bg-yellow-400/[0.02] transition-all duration-300 text-center">
+              <div className="w-12 h-12 rounded-2xl bg-yellow-400/10 border border-yellow-400/20 flex items-center justify-center mx-auto mb-5">
+                <Mail size={22} className="text-yellow-400" />
               </div>
+              <h3 className="text-sm font-bold text-white mb-1">General Inquiries</h3>
+              <p className="text-xs text-white/35 mb-3">Questions about the platform</p>
+              <p className="text-sm text-yellow-400 font-semibold">hello@isbs.io</p>
+            </div>
 
-              <div className="relative opacity-40">
-                <div className="absolute -left-[3.4rem] w-7 h-7 rounded-full bg-white/8 border border-white/15 flex items-center justify-center">
-                  <span className="text-white/30 text-xs font-black">2</span>
-                </div>
-                <div className="bg-white/[0.02] border border-white/[0.06] rounded-2xl p-8">
-                  <h3 className="text-xl font-bold text-white/35 mb-2">
-                    Release 2 — Automation & Scheduling
-                  </h3>
-                  <p className="text-white/25 text-sm">
-                    Automation rules, device scheduling, push notifications &amp; more. Coming soon.
-                  </p>
-                </div>
+            <div className="bg-white/[0.03] border border-white/[0.08] rounded-2xl p-8 hover:border-yellow-400/25 hover:bg-yellow-400/[0.02] transition-all duration-300 text-center">
+              <div className="w-12 h-12 rounded-2xl bg-yellow-400/10 border border-yellow-400/20 flex items-center justify-center mx-auto mb-5">
+                <Shield size={22} className="text-yellow-400" />
               </div>
+              <h3 className="text-sm font-bold text-white mb-1">Support</h3>
+              <p className="text-xs text-white/35 mb-3">Technical help &amp; troubleshooting</p>
+              <p className="text-sm text-yellow-400 font-semibold">support@isbs.io</p>
+            </div>
+
+            <div className="bg-white/[0.03] border border-white/[0.08] rounded-2xl p-8 hover:border-yellow-400/25 hover:bg-yellow-400/[0.02] transition-all duration-300 text-center">
+              <div className="w-12 h-12 rounded-2xl bg-yellow-400/10 border border-yellow-400/20 flex items-center justify-center mx-auto mb-5">
+                <ExternalLink size={22} className="text-yellow-400" />
+              </div>
+              <h3 className="text-sm font-bold text-white mb-1">Partnerships</h3>
+              <p className="text-xs text-white/35 mb-3">Bring ISBS to your property</p>
+              <p className="text-sm text-yellow-400 font-semibold">partners@isbs.io</p>
             </div>
           </div>
         </div>
@@ -540,7 +503,7 @@ export function LandingPage() {
                 <p className="text-white/20 text-xs font-bold uppercase tracking-widest mb-4">
                   Platform
                 </p>
-                {['features', 'about', 'releases'].map((id) => (
+                {['features', 'about', 'contact'].map((id) => (
                   <button
                     key={id}
                     onClick={() => scrollTo(id)}
@@ -566,7 +529,7 @@ export function LandingPage() {
 
           <div className="border-t border-white/[0.05] pt-8 flex flex-wrap items-center justify-between gap-4">
             <p className="text-white/20 text-xs">
-              © {new Date().getFullYear()} ISBS &nbsp;·&nbsp; IBU IT 309 Software Engineering
+              © {new Date().getFullYear()} ISBS &nbsp;·&nbsp; All rights reserved
             </p>
             <p className="text-white/15 text-xs">
               Intelligent Spaces, Seamless Living
