@@ -37,7 +37,8 @@
       "Bash(curl -s http://localhost:4000/api/health)",
       "Bash(kill %1)",
       "Bash(echo \"Exit: $?\")",
-      "Bash(xargs -I{} wc -l /Users/lamijafatic/smart_building/backend/src/repositories/{})"
+      "Bash(xargs -I{} wc -l /Users/lamijafatic/smart_building/backend/src/repositories/{})",
+      "Bash(node -e \"const { Github } = require\\('lucide-react'\\); console.log\\(Github ? 'ok' : 'not found'\\)\")"
     ]
   }
 }
