@@ -6,20 +6,124 @@ import {
   DoorOpen,
   LogOut,
   Building2,
-  Landmark,
   Menu,
   X,
   Sun,
   Moon,
+  HelpCircle,
+  Send,
+  CheckCircle2,
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../contexts/ThemeContext';
+
+function ContactModal({ onClose }: { onClose: () => void }) {
+  const { user } = useAuth();
+  const [name, setName] = useState(user?.name ?? '');
+  const [email, setEmail] = useState(user?.email ?? '');
+  const [message, setMessage] = useState('');
+  const [sent, setSent] = useState(false);
+  const [sending, setSending] = useState(false);
+
+  function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    if (!message.trim()) return;
+    setSending(true);
+    setTimeout(() => {
+      setSending(false);
+      setSent(true);
+    }, 800);
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+      <div className="bg-white dark:bg-[#0a0a14] border border-slate-200 dark:border-white/[0.1] rounded-2xl p-6 w-full max-w-md shadow-2xl">
+        <div className="flex items-center justify-between mb-5">
+          <div className="flex items-center gap-2.5">
+            <HelpCircle size={18} className="text-yellow-500 dark:text-yellow-400" />
+            <h2 className="text-base font-black text-slate-900 dark:text-white">Contact Support</h2>
+          </div>
+          <button onClick={onClose} className="text-slate-400 dark:text-white/30 hover:text-slate-700 dark:hover:text-white transition">
+            <X size={18} />
+          </button>
+        </div>
+
+        {sent ? (
+          <div className="text-center py-8 space-y-3">
+            <CheckCircle2 size={40} className="mx-auto text-emerald-500" />
+            <p className="text-base font-bold text-slate-900 dark:text-white">Message sent!</p>
+            <p className="text-sm text-slate-400 dark:text-white/40">Our support team will get back to you shortly.</p>
+            <button
+              onClick={onClose}
+              className="mt-2 px-6 py-2.5 bg-yellow-400 hover:bg-yellow-300 text-slate-900 font-bold rounded-xl text-sm transition"
+            >
+              Close
+            </button>
+          </div>
+        ) : (
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div>
+              <label className="block text-xs font-bold uppercase tracking-widest text-slate-400 dark:text-white/40 mb-1.5">Name</label>
+              <input
+                type="text"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                required
+                className="w-full rounded-xl bg-slate-50 dark:bg-white/[0.06] border border-slate-200 dark:border-white/[0.1] text-slate-900 dark:text-white px-3.5 py-2.5 text-sm focus:outline-none focus:border-yellow-400 dark:focus:border-yellow-400/60 transition"
+                placeholder="Your name"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-bold uppercase tracking-widest text-slate-400 dark:text-white/40 mb-1.5">Email</label>
+              <input
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+                className="w-full rounded-xl bg-slate-50 dark:bg-white/[0.06] border border-slate-200 dark:border-white/[0.1] text-slate-900 dark:text-white px-3.5 py-2.5 text-sm focus:outline-none focus:border-yellow-400 dark:focus:border-yellow-400/60 transition"
+                placeholder="your@email.com"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-bold uppercase tracking-widest text-slate-400 dark:text-white/40 mb-1.5">Message</label>
+              <textarea
+                value={message}
+                onChange={(e) => setMessage(e.target.value)}
+                required
+                rows={4}
+                className="w-full rounded-xl bg-slate-50 dark:bg-white/[0.06] border border-slate-200 dark:border-white/[0.1] text-slate-900 dark:text-white px-3.5 py-2.5 text-sm focus:outline-none focus:border-yellow-400 dark:focus:border-yellow-400/60 transition resize-none"
+                placeholder="Describe your issue or question…"
+              />
+            </div>
+            <div className="flex gap-3 pt-1">
+              <button
+                type="submit"
+                disabled={sending || !message.trim()}
+                className="flex items-center gap-2 px-5 py-2.5 bg-yellow-400 hover:bg-yellow-300 text-slate-900 font-bold rounded-xl text-sm transition disabled:opacity-60"
+              >
+                <Send size={14} />
+                {sending ? 'Sending…' : 'Send message'}
+              </button>
+              <button
+                type="button"
+                onClick={onClose}
+                className="px-5 py-2.5 rounded-xl text-sm font-semibold border border-slate-200 dark:border-white/[0.1] text-slate-600 dark:text-white/60 hover:bg-slate-100 dark:hover:bg-white/[0.04] transition"
+              >
+                Cancel
+              </button>
+            </div>
+          </form>
+        )}
+      </div>
+    </div>
+  );
+}
 
 const navItems = [
   { to: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { to: '/devices', label: 'Devices', icon: Zap },
   { to: '/rooms', label: 'Rooms', icon: DoorOpen },
-  { to: '/building', label: 'Building', icon: Landmark },
+  { to: '/building', label: 'Building', icon: Building2 },
 ];
 
 export function Layout() {
@@ -27,6 +131,7 @@ export function Layout() {
   const { isDark, toggle } = useTheme();
   const navigate = useNavigate();
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [showContact, setShowContact] = useState(false);
 
   async function handleLogout() {
     await logout();
@@ -76,6 +181,14 @@ export function Layout() {
         >
           {isDark ? <Sun size={15} /> : <Moon size={15} />}
           {isDark ? 'Light mode' : 'Dark mode'}
+        </button>
+
+        <button
+          onClick={() => setShowContact(true)}
+          className="flex items-center gap-2.5 w-full px-3 py-2.5 rounded-xl text-sm font-semibold text-slate-500 hover:bg-slate-100 hover:text-slate-900 dark:text-white/40 dark:hover:bg-white/[0.05] dark:hover:text-white transition"
+        >
+          <HelpCircle size={15} />
+          Contact Support
         </button>
 
         <div className="flex items-center gap-3 px-3 py-2.5 rounded-xl bg-slate-100 dark:bg-white/[0.04]">
@@ -154,6 +267,8 @@ export function Layout() {
           <Outlet />
         </main>
       </div>
+
+      {showContact && <ContactModal onClose={() => setShowContact(false)} />}
     </div>
   );
 }

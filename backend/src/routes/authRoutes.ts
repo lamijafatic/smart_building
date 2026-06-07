@@ -9,5 +9,6 @@ router.post('/register', validateBody(registerSchema), authController.register);
 router.post('/login', validateBody(loginSchema), authController.login);
 router.post('/logout', authenticate, authController.logout);
 router.get('/me', authenticate, authController.me);
+router.patch('/connect', authenticate, authController.connect);
 
 export default router;

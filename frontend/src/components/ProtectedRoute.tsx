@@ -2,7 +2,12 @@ import { ReactNode } from 'react';
 import { Navigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 
-export function ProtectedRoute({ children }: { children: ReactNode }) {
+interface Props {
+  children: ReactNode;
+  requireAdmin?: boolean;
+}
+
+export function ProtectedRoute({ children, requireAdmin }: Props) {
   const { user, loading } = useAuth();
   if (loading) {
     return (
@@ -12,5 +17,7 @@ export function ProtectedRoute({ children }: { children: ReactNode }) {
     );
   }
   if (!user) return <Navigate to="/login" replace />;
+  if (requireAdmin && user.role !== 'ADMIN') return <Navigate to="/dashboard" replace />;
+  if (!requireAdmin && user.role === 'ADMIN') return <Navigate to="/admin" replace />;
   return <>{children}</>;
 }

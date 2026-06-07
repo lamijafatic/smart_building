@@ -7,5 +7,6 @@ router.use(authenticate);
 
 router.get('/apartments/:apartmentId', dashboardController.get);
 router.get('/apartments/:apartmentId/live', dashboardController.getLive);
+router.get('/apartments/:apartmentId/chart', dashboardController.getChart);
 
 export default router;

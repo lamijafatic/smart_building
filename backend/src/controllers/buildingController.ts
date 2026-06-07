@@ -57,4 +57,15 @@ export const buildingController = {
       next(e);
     }
   },
+
+  async toggleSharedDevice(req: Request, res: Response, next: NextFunction) {
+    try {
+      const buildingId = Number(req.params.id);
+      const deviceId = Number(req.params.deviceId);
+      const updated = await buildingService.toggleSharedDevice(buildingId, deviceId);
+      res.json(updated);
+    } catch (e) {
+      next(e);
+    }
+  },
 };
