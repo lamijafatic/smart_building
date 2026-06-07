@@ -14,6 +14,8 @@ import { dashboardApi } from '../api/dashboard';
 import { notificationsApi } from '../api/notifications';
 import type { Notification } from '../api/notifications';
 import { useTheme } from '../contexts/ThemeContext';
+import { useAuth } from '../context/AuthContext';
+import { FirstLoginPopup } from '../components/FirstLoginPopup';
 
 const REFRESH_MS = 15_000;
 type Mode = 'HOME' | 'AWAY' | 'NONE';
@@ -26,6 +28,8 @@ const MODES: { key: Mode; label: string; Icon: React.ElementType }[] = [
 
 export function DashboardPage() {
   const { isDark } = useTheme();
+  const { user } = useAuth();
+  const [showSetupPopup, setShowSetupPopup] = useState(false);
   const [apartments, setApartments] = useState<Apartment[]>([]);
   const [selectedId, setSelectedId] = useState<number | null>(null);
   const [data, setData] = useState<DashboardData | null>(null);
@@ -35,6 +39,8 @@ export function DashboardPage() {
   const [liveActiveCount, setLiveActiveCount] = useState<number>(0);
   const [activeMode, setActiveMode] = useState<Mode>('NONE');
   const [modeLoading, setModeLoading] = useState(false);
+  const [chartDays, setChartDays] = useState<7 | 30>(7);
+  const [chartData30, setChartData30] = useState<{ date: string; kwh: number }[]>([]);
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [showNotifications, setShowNotifications] = useState(false);
@@ -56,6 +62,7 @@ export function DashboardPage() {
         if (apts.length > 0) {
           setSelectedId(apts[0].id);
           setActiveMode((apts[0].activeMode as Mode) ?? 'NONE');
+          if (user && !user.hasConnected) setShowSetupPopup(true);
         } else {
           setLoading(false);
         }
@@ -108,6 +115,21 @@ export function DashboardPage() {
     const interval = setInterval(fetchLive, 5_000);
     return () => { cancelled = true; clearInterval(interval); };
   }, [selectedId]);
+
+  useEffect(() => {
+    if (selectedId == null || chartDays !== 30) return;
+    let cancelled = false;
+
+    async function fetchChart30() {
+      try {
+        const result = await dashboardApi.getChart(selectedId!, 30);
+        if (!cancelled) setChartData30(result);
+      } catch { }
+    }
+
+    fetchChart30();
+    return () => { cancelled = true; };
+  }, [selectedId, chartDays]);
 
   useEffect(() => {
     if (selectedId == null) return;
@@ -182,6 +204,21 @@ export function DashboardPage() {
     );
   }
 
+  if (!loading && apartments.length === 0) {
+    return (
+      <div className="flex flex-col items-center justify-center py-24 text-center">
+        <div className="w-20 h-20 rounded-2xl bg-yellow-400/10 dark:bg-yellow-400/5 flex items-center justify-center mb-6">
+          <Home size={36} className="text-yellow-400" />
+        </div>
+        <h2 className="text-xl font-black text-slate-900 dark:text-white mb-3">No apartments configured yet</h2>
+        <p className="text-slate-500 dark:text-white/40 text-sm max-w-xs leading-relaxed">
+          Your smart building account is active. An administrator will configure your building,
+          apartments, rooms, and devices. Once set up, everything will appear here automatically.
+        </p>
+      </div>
+    );
+  }
+
   if (loading || !data) {
     return (
       <div className="space-y-6 animate-pulse">
@@ -207,6 +244,12 @@ export function DashboardPage() {
 
   return (
     <div className="space-y-6">
+      {showSetupPopup && (
+        <FirstLoginPopup
+          deviceCount={totalDevices}
+          onClose={() => setShowSetupPopup(false)}
+        />
+      )}
       {/* Header */}
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
@@ -399,13 +442,32 @@ export function DashboardPage() {
 
       {/* Daily chart */}
       <section className="bg-white dark:bg-white/[0.03] border border-slate-200 dark:border-white/[0.08] rounded-2xl p-6 shadow-sm dark:shadow-none">
-        <div className="flex items-center gap-2 mb-5">
-          <TrendingUp size={17} className="text-yellow-500 dark:text-yellow-400" />
-          <h3 className="text-sm font-bold text-slate-900 dark:text-white">Daily consumption — last 7 days</h3>
+        <div className="flex items-center justify-between gap-2 mb-5">
+          <div className="flex items-center gap-2">
+            <TrendingUp size={17} className="text-yellow-500 dark:text-yellow-400" />
+            <h3 className="text-sm font-bold text-slate-900 dark:text-white">
+              Daily consumption — last {chartDays} days
+            </h3>
+          </div>
+          <div className="flex items-center gap-1">
+            {([7, 30] as const).map((days) => (
+              <button
+                key={days}
+                onClick={() => setChartDays(days)}
+                className={`px-2.5 py-1 rounded-lg text-xs font-semibold border transition ${
+                  chartDays === days
+                    ? 'text-yellow-600 dark:text-yellow-400 border-yellow-300 dark:border-yellow-400/40 bg-yellow-50 dark:bg-yellow-400/10'
+                    : 'text-slate-400 dark:text-white/35 border-slate-200 dark:border-white/[0.1] hover:text-slate-700 dark:hover:text-white/70'
+                }`}
+              >
+                {days} days
+              </button>
+            ))}
+          </div>
         </div>
         <div className="h-64">
           <ResponsiveContainer width="100%" height="100%">
-            <LineChart data={data.dailyChart} margin={{ top: 4, right: 8, bottom: 0, left: 0 }}>
+            <LineChart data={chartDays === 7 ? data.dailyChart : chartData30} margin={{ top: 4, right: 8, bottom: 0, left: 0 }}>
               <CartesianGrid strokeDasharray="3 3" stroke={chartStyle.grid} />
               <XAxis dataKey="date" stroke={chartStyle.axis} fontSize={11} tickLine={false} />
               <YAxis stroke={chartStyle.axis} fontSize={11} unit=" kWh" tickLine={false} axisLine={false} />

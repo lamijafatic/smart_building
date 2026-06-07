@@ -6,7 +6,11 @@ export const buildingRepository = {
   findById: (id: number) =>
     prisma.building.findUnique({
       where: { id },
-      include: { apartments: true },
+      include: {
+        apartments: {
+          include: { rooms: { include: { devices: true } } },
+        },
+      },
     }),
 
   create: (data: { name: string; location: string }) => prisma.building.create({ data }),

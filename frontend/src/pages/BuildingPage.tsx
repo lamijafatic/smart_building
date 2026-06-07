@@ -3,10 +3,102 @@ import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid,
   Tooltip, ResponsiveContainer, Legend,
 } from 'recharts';
-import { Building2, Zap, CalendarDays, Home, BellOff, SlidersHorizontal, MapPin } from 'lucide-react';
+import {
+  Building2, Zap, CalendarDays, Home, BellOff, SlidersHorizontal, MapPin,
+  X, Lightbulb, Wind, Tv, WashingMachine, Thermometer, Plug,
+} from 'lucide-react';
 import { buildingsApi } from '../api/buildings';
-import type { BuildingOverview } from '../api/buildings';
+import type { BuildingOverview, SharedDevice, SharedSpace } from '../api/buildings';
 import { useTheme } from '../contexts/ThemeContext';
+
+function deviceIcon(type: string) {
+  const map: Record<string, React.ReactNode> = {
+    LIGHT: <Lightbulb size={16} />,
+    AC: <Wind size={16} />,
+    TV: <Tv size={16} />,
+    WASHING_MACHINE: <WashingMachine size={16} />,
+    THERMOSTAT: <Thermometer size={16} />,
+  };
+  return map[type] ?? <Plug size={16} />;
+}
+
+interface SharedDeviceModalProps {
+  device: SharedDevice;
+  spaceName: string;
+  roomName: string;
+  buildingId: number;
+  onClose: () => void;
+  onToggle: (device: SharedDevice) => void;
+}
+
+function SharedDeviceModal({ device, spaceName, roomName, buildingId, onClose, onToggle }: SharedDeviceModalProps) {
+  const [toggling, setToggling] = useState(false);
+
+  async function handleToggle() {
+    setToggling(true);
+    try {
+      const updated = await buildingsApi.toggleSharedDevice(buildingId, device.id);
+      onToggle(updated);
+    } finally {
+      setToggling(false);
+    }
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+      <div className="bg-white dark:bg-[#0a0a14] border border-slate-200 dark:border-white/[0.1] rounded-2xl p-6 w-full max-w-sm shadow-2xl">
+        <div className="flex items-start justify-between mb-5">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-yellow-400/10 flex items-center justify-center text-yellow-500 dark:text-yellow-400">
+              {deviceIcon(device.type)}
+            </div>
+            <div>
+              <h3 className="text-base font-black text-slate-900 dark:text-white">{device.name}</h3>
+              <p className="text-xs text-slate-400 dark:text-white/40 mt-0.5">{spaceName} · {roomName}</p>
+            </div>
+          </div>
+          <button onClick={onClose} className="text-slate-400 dark:text-white/30 hover:text-slate-700 dark:hover:text-white transition">
+            <X size={18} />
+          </button>
+        </div>
+
+        <div className="space-y-3 mb-5">
+          <div className="flex justify-between items-center py-2.5 border-b border-slate-100 dark:border-white/[0.06]">
+            <span className="text-sm text-slate-500 dark:text-white/50">Type</span>
+            <span className="text-sm font-semibold text-slate-900 dark:text-white">{device.type.replace(/_/g, ' ')}</span>
+          </div>
+          <div className="flex justify-between items-center py-2.5 border-b border-slate-100 dark:border-white/[0.06]">
+            <span className="text-sm text-slate-500 dark:text-white/50">Power draw</span>
+            <span className="text-sm font-semibold text-slate-900 dark:text-white">{device.powerWatts} W</span>
+          </div>
+          <div className="flex justify-between items-center py-2.5">
+            <span className="text-sm text-slate-500 dark:text-white/50">Status</span>
+            <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold ${
+              device.status
+                ? 'bg-emerald-100 dark:bg-emerald-400/10 text-emerald-700 dark:text-emerald-400'
+                : 'bg-slate-100 dark:bg-white/[0.06] text-slate-500 dark:text-white/40'
+            }`}>
+              <span className={`w-1.5 h-1.5 rounded-full ${device.status ? 'bg-emerald-500' : 'bg-slate-400'}`} />
+              {device.status ? 'ON' : 'OFF'}
+            </span>
+          </div>
+        </div>
+
+        <button
+          onClick={handleToggle}
+          disabled={toggling}
+          className={`w-full py-2.5 rounded-xl font-bold text-sm transition disabled:opacity-60 ${
+            device.status
+              ? 'bg-slate-100 dark:bg-white/[0.08] text-slate-700 dark:text-white hover:bg-slate-200 dark:hover:bg-white/[0.12]'
+              : 'bg-yellow-400 hover:bg-yellow-300 text-slate-900'
+          }`}
+        >
+          {toggling ? 'Updating…' : device.status ? 'Turn OFF' : 'Turn ON'}
+        </button>
+      </div>
+    </div>
+  );
+}
 
 function modeLabel(mode: string) {
   if (mode === 'HOME') return { label: 'Home', Icon: Home, cls: 'bg-emerald-100 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400' };
@@ -19,6 +111,9 @@ export function BuildingPage() {
   const [overview, setOverview] = useState<BuildingOverview | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [selectedSharedDevice, setSelectedSharedDevice] = useState<{
+    device: SharedDevice; space: SharedSpace; roomName: string;
+  } | null>(null);
 
   const chartStyle = {
     grid: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.06)',
@@ -165,6 +260,115 @@ export function BuildingPage() {
           </ResponsiveContainer>
         </div>
       </section>
+
+      {/* Device Distribution */}
+      {overview.deviceDistribution && overview.deviceDistribution.length > 0 && (
+        <section className="bg-white dark:bg-white/[0.03] border border-slate-200 dark:border-white/[0.08] rounded-2xl p-6 shadow-sm dark:shadow-none">
+          <div className="flex items-center gap-2 mb-5">
+            <Zap size={17} className="text-yellow-500 dark:text-yellow-400" />
+            <h3 className="text-sm font-bold text-slate-900 dark:text-white">Device types</h3>
+            <span className="ml-auto text-xs text-slate-400 dark:text-white/30 font-semibold">
+              {overview.deviceDistribution.reduce((sum, d) => sum + d.count, 0)} total devices
+            </span>
+          </div>
+          <div className="space-y-2.5">
+            {overview.deviceDistribution.map(({ type, count }) => {
+              const colorMap: Record<string, string> = {
+                LIGHT: 'bg-yellow-400',
+                THERMOSTAT: 'bg-orange-400',
+                AC: 'bg-blue-400',
+                TV: 'bg-purple-400',
+                OUTLET: 'bg-slate-400',
+                WASHING_MACHINE: 'bg-cyan-400',
+              };
+              const dotColor = colorMap[type] ?? 'bg-slate-300';
+              return (
+                <div key={type} className="flex items-center gap-3">
+                  <span className={`w-2.5 h-2.5 rounded-full shrink-0 ${dotColor}`} />
+                  <span className="text-sm text-slate-700 dark:text-white/70 flex-1">
+                    {type.replace(/_/g, ' ')}
+                  </span>
+                  <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-slate-100 dark:bg-white/[0.06] text-slate-600 dark:text-white/50">
+                    {count}
+                  </span>
+                </div>
+              );
+            })}
+          </div>
+        </section>
+      )}
+
+      {/* Shared / Common Area Devices */}
+      {overview.sharedSpaces && overview.sharedSpaces.length > 0 && (
+        <section className="bg-white dark:bg-white/[0.03] border border-slate-200 dark:border-white/[0.08] rounded-2xl overflow-hidden shadow-sm dark:shadow-none">
+          <div className="px-6 py-4 border-b border-slate-100 dark:border-white/[0.06] flex items-center gap-2">
+            <Building2 size={17} className="text-blue-500 dark:text-blue-400" />
+            <h3 className="text-sm font-bold text-slate-900 dark:text-white">Shared / Common Area Devices</h3>
+            <span className="ml-auto text-xs text-slate-400 dark:text-white/30 font-semibold">
+              {overview.sharedSpaces.reduce((s, sp) => s + sp.rooms.reduce((r, rm) => r + rm.devices.length, 0), 0)} devices
+            </span>
+          </div>
+          <div className="divide-y divide-slate-100 dark:divide-white/[0.04]">
+            {overview.sharedSpaces.map((space) =>
+              space.rooms.map((room) =>
+                room.devices.map((device) => (
+                  <div
+                    key={device.id}
+                    className="flex items-center gap-4 px-6 py-3.5 hover:bg-slate-50 dark:hover:bg-white/[0.03] transition cursor-pointer"
+                    onClick={() => setSelectedSharedDevice({ device, space, roomName: room.name })}
+                  >
+                    <div className="w-8 h-8 rounded-lg bg-slate-100 dark:bg-white/[0.06] flex items-center justify-center text-slate-500 dark:text-white/50 shrink-0">
+                      {deviceIcon(device.type)}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-semibold text-slate-800 dark:text-white/90 truncate">{device.name}</p>
+                      <p className="text-xs text-slate-400 dark:text-white/40">{space.name} · {room.name}</p>
+                    </div>
+                    <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold ${
+                      device.status
+                        ? 'bg-emerald-100 dark:bg-emerald-400/10 text-emerald-700 dark:text-emerald-400'
+                        : 'bg-slate-100 dark:bg-white/[0.06] text-slate-500 dark:text-white/40'
+                    }`}>
+                      <span className={`w-1.5 h-1.5 rounded-full ${device.status ? 'bg-emerald-500' : 'bg-slate-400'}`} />
+                      {device.status ? 'ON' : 'OFF'}
+                    </span>
+                    <span className="text-xs text-slate-400 dark:text-white/30">{device.powerWatts} W</span>
+                  </div>
+                ))
+              )
+            )}
+          </div>
+        </section>
+      )}
+
+      {/* Shared device detail modal */}
+      {selectedSharedDevice && (
+        <SharedDeviceModal
+          device={selectedSharedDevice.device}
+          spaceName={selectedSharedDevice.space.name}
+          roomName={selectedSharedDevice.roomName}
+          buildingId={overview.building.id}
+          onClose={() => setSelectedSharedDevice(null)}
+          onToggle={(updated) => {
+            setOverview((prev) => {
+              if (!prev || !prev.sharedSpaces) return prev;
+              return {
+                ...prev,
+                sharedSpaces: prev.sharedSpaces.map((sp) => ({
+                  ...sp,
+                  rooms: sp.rooms.map((rm) => ({
+                    ...rm,
+                    devices: rm.devices.map((d) => (d.id === updated.id ? { ...d, status: updated.status } : d)),
+                  })),
+                })),
+              };
+            });
+            setSelectedSharedDevice((prev) =>
+              prev ? { ...prev, device: { ...prev.device, status: updated.status } } : null
+            );
+          }}
+        />
+      )}
 
       {/* Apartments table */}
       <section className="bg-white dark:bg-white/[0.03] border border-slate-200 dark:border-white/[0.08] rounded-2xl overflow-hidden shadow-sm dark:shadow-none">

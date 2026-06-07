@@ -3,6 +3,7 @@ export interface User {
   email: string;
   name: string;
   role: string;
+  hasConnected: boolean;
 }
 
 export interface Apartment {
