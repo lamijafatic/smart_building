@@ -46,4 +46,13 @@ export const authController = {
   async logout(_req: Request, res: Response) {
     res.json({ message: 'Logged out' });
   },
+
+  async connect(req: Request, res: Response, next: NextFunction) {
+    try {
+      await authService.connect(req.user!.userId);
+      res.json({ hasConnected: true });
+    } catch (e) {
+      next(e);
+    }
+  },
 };

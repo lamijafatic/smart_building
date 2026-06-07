@@ -96,4 +96,38 @@ export const dashboardService = {
 
     return { totalWatts, activeCount };
   },
+
+  async getEnergyChart(
+    apartmentId: number,
+    requestingUserId: number,
+    days: number,
+  ): Promise<{ date: string; kwh: number }[]> {
+    const apt = await apartmentRepository.findById(apartmentId);
+    if (!apt) throw new NotFoundError('Apartment');
+    if (apt.ownerId !== requestingUserId) throw new UnauthorizedError();
+
+    const now = new Date();
+    const rangeStart = startOfDay(new Date(now.getTime() - (days - 1) * 24 * 60 * 60 * 1000));
+
+    const readings = await energyDataRepository.readingsByApartmentInRange(
+      apartmentId,
+      rangeStart,
+      now,
+    );
+
+    const result: { date: string; kwh: number }[] = [];
+    for (let i = days - 1; i >= 0; i--) {
+      const dayStart = startOfDay(new Date(now.getTime() - i * 24 * 60 * 60 * 1000));
+      const dayEnd = new Date(dayStart.getTime() + 24 * 60 * 60 * 1000);
+      const total = readings
+        .filter((r) => r.timestamp >= dayStart && r.timestamp < dayEnd)
+        .reduce((s, r) => s + r.valueKwh, 0);
+      const y = dayStart.getFullYear();
+      const mo = String(dayStart.getMonth() + 1).padStart(2, '0');
+      const d = String(dayStart.getDate()).padStart(2, '0');
+      result.push({ date: `${y}-${mo}-${d}`, kwh: Number(total.toFixed(3)) });
+    }
+
+    return result;
+  },
 };

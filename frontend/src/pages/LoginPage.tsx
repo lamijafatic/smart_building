@@ -1,13 +1,13 @@
 import React, { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { Building2, Mail, Lock, ArrowRight } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
 export function LoginPage() {
   const navigate = useNavigate();
   const { login } = useAuth();
-  const [email, setEmail] = useState('demo@smartbuilding.test');
-  const [password, setPassword] = useState('demo1234');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
@@ -16,8 +16,8 @@ export function LoginPage() {
     setError(null);
     setSubmitting(true);
     try {
-      await login(email, password);
-      navigate('/dashboard');
+      const role = await login(email, password);
+      navigate(role === 'ADMIN' ? '/admin' : '/dashboard');
     } catch {
       setError('Invalid email or password.');
     } finally {
@@ -234,13 +234,6 @@ export function LoginPage() {
               )}
             </button>
           </form>
-
-          <p className="text-center text-sm text-slate-400 dark:text-white/30 mt-6">
-            Don't have an account?{' '}
-            <Link to="/signup" className="text-yellow-600 dark:text-yellow-400 font-semibold hover:underline">
-              Sign up
-            </Link>
-          </p>
 
           <p className="text-center text-xs text-slate-300 dark:text-white/20 mt-10">
             &copy; {new Date().getFullYear()} ISBS &nbsp;&middot;&nbsp; Intelligent Spaces, Seamless Living

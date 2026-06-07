@@ -15,5 +15,6 @@ router.get('/:id', apartmentController.get);
 router.post('/', validateBody(apartmentCreateSchema), apartmentController.create);
 router.patch('/:id', validateBody(apartmentUpdateSchema), apartmentController.update);
 router.delete('/:id', apartmentController.remove);
+router.patch('/:id/mode', apartmentController.setMode);
 
 export default router;

@@ -3,6 +3,7 @@ export interface User {
   email: string;
   name: string;
   role: string;
+  hasConnected: boolean;
 }
 
 export interface Apartment {
@@ -11,6 +12,7 @@ export interface Apartment {
   area: number;
   buildingId: number;
   ownerId: number;
+  activeMode?: string;
   building?: Building;
 }
 

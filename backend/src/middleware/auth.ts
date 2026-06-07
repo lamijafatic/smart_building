@@ -24,3 +24,10 @@ export function authenticate(req: Request, _res: Response, next: NextFunction): 
     next(new UnauthorizedError('Invalid or expired token'));
   }
 }
+
+export function requireAdmin(req: Request, _res: Response, next: NextFunction): void {
+  if (!req.user || req.user.role !== 'ADMIN') {
+    return next(new UnauthorizedError('Admin access required'));
+  }
+  next();
+}

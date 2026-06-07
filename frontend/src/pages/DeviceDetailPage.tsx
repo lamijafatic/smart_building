@@ -7,10 +7,15 @@ import {
 import {
   ArrowLeft, Lightbulb, Wind, Tv, Refrigerator,
   WashingMachine, Waves, Thermometer, Plug, Zap, Clock, BarChart3,
+  CalendarDays, Plus, Trash2, Pencil, Check, X,
 } from 'lucide-react';
 import { devicesApi } from '../api/devices';
+import { schedulesApi } from '../api/schedules';
+import type { Schedule } from '../api/schedules';
 import { useTheme } from '../contexts/ThemeContext';
 import type { Device, EnergyDataPoint } from '../types';
+
+const DAYS = ['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN'];
 
 function deviceIcon(type: string, size = 24) {
   const icons: Record<string, React.ReactNode> = {
@@ -44,6 +49,99 @@ function ToggleSwitch({ on, onToggle }: { on: boolean; onToggle: () => void }) {
   );
 }
 
+interface ScheduleFormData {
+  days: string[];
+  startTime: string;
+  endTime: string;
+}
+
+function ScheduleForm({
+  initial,
+  onSave,
+  onCancel,
+  saving,
+}: {
+  initial?: ScheduleFormData;
+  onSave: (data: ScheduleFormData) => void;
+  onCancel: () => void;
+  saving: boolean;
+}) {
+  const [days, setDays] = useState<string[]>(initial?.days ?? ['MON', 'WED', 'FRI']);
+  const [startTime, setStartTime] = useState(initial?.startTime ?? '08:00');
+  const [endTime, setEndTime] = useState(initial?.endTime ?? '22:00');
+
+  function toggleDay(day: string) {
+    setDays((prev) =>
+      prev.includes(day) ? prev.filter((d) => d !== day) : [...prev, day],
+    );
+  }
+
+  return (
+    <div className="space-y-4 p-4 bg-slate-50 dark:bg-white/[0.03] border border-slate-200 dark:border-white/[0.08] rounded-xl">
+      <div>
+        <p className="text-xs font-bold uppercase tracking-widest text-slate-400 dark:text-white/30 mb-2">Days</p>
+        <div className="flex flex-wrap gap-2">
+          {DAYS.map((d) => (
+            <button
+              key={d}
+              type="button"
+              onClick={() => toggleDay(d)}
+              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition ${
+                days.includes(d)
+                  ? 'bg-yellow-400 text-[#080810]'
+                  : 'bg-slate-200 dark:bg-white/[0.08] text-slate-500 dark:text-white/40 hover:bg-slate-300 dark:hover:bg-white/[0.12]'
+              }`}
+            >
+              {d}
+            </button>
+          ))}
+        </div>
+      </div>
+      <div className="flex gap-4">
+        <div className="flex-1">
+          <label className="text-xs font-bold uppercase tracking-widest text-slate-400 dark:text-white/30 block mb-1.5">
+            Start
+          </label>
+          <input
+            type="time"
+            value={startTime}
+            onChange={(e) => setStartTime(e.target.value)}
+            className="w-full rounded-xl bg-white dark:bg-white/[0.05] border border-slate-200 dark:border-white/[0.1] text-slate-900 dark:text-white px-3 py-2 text-sm focus:outline-none focus:border-yellow-400 dark:focus:border-yellow-400/50 transition"
+          />
+        </div>
+        <div className="flex-1">
+          <label className="text-xs font-bold uppercase tracking-widest text-slate-400 dark:text-white/30 block mb-1.5">
+            End
+          </label>
+          <input
+            type="time"
+            value={endTime}
+            onChange={(e) => setEndTime(e.target.value)}
+            className="w-full rounded-xl bg-white dark:bg-white/[0.05] border border-slate-200 dark:border-white/[0.1] text-slate-900 dark:text-white px-3 py-2 text-sm focus:outline-none focus:border-yellow-400 dark:focus:border-yellow-400/50 transition"
+          />
+        </div>
+      </div>
+      <div className="flex gap-2">
+        <button
+          onClick={() => onSave({ days, startTime, endTime })}
+          disabled={saving || days.length === 0}
+          className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-yellow-400 hover:bg-yellow-300 text-[#080810] text-xs font-bold transition disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          <Check size={13} />
+          {saving ? 'Saving...' : 'Save'}
+        </button>
+        <button
+          onClick={onCancel}
+          className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-slate-100 dark:bg-white/[0.06] text-slate-500 dark:text-white/40 text-xs font-bold hover:bg-slate-200 dark:hover:bg-white/[0.1] transition"
+        >
+          <X size={13} />
+          Cancel
+        </button>
+      </div>
+    </div>
+  );
+}
+
 export function DeviceDetailPage() {
   const { id } = useParams<{ id: string }>();
   const { isDark } = useTheme();
@@ -51,6 +149,11 @@ export function DeviceDetailPage() {
   const [history, setHistory] = useState<EnergyDataPoint[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+
+  const [schedules, setSchedules] = useState<Schedule[]>([]);
+  const [showCreateForm, setShowCreateForm] = useState(false);
+  const [editId, setEditId] = useState<number | null>(null);
+  const [savingSchedule, setSavingSchedule] = useState(false);
 
   const chartStyle = {
     grid: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.06)',
@@ -64,12 +167,14 @@ export function DeviceDetailPage() {
     if (!id) return;
     setError(null);
     try {
-      const [d, h] = await Promise.all([
+      const [d, h, s] = await Promise.all([
         devicesApi.get(Number(id)),
         devicesApi.history(Number(id), 7),
+        schedulesApi.listForDevice(Number(id)),
       ]);
       setDevice(d);
       setHistory(h);
+      setSchedules(s);
     } catch {
       setError('Unable to load device data.');
     } finally {
@@ -90,6 +195,52 @@ export function DeviceDetailPage() {
       setDevice({ ...device, status: updated.status });
     } catch {
       setError('Failed to update device.');
+    }
+  }
+
+  async function handleCreateSchedule(data: ScheduleFormData) {
+    if (!id) return;
+    setSavingSchedule(true);
+    try {
+      const created = await schedulesApi.create({ deviceId: Number(id), ...data });
+      setSchedules((prev) => [...prev, created]);
+      setShowCreateForm(false);
+    } catch {
+      setError('Failed to create schedule.');
+    } finally {
+      setSavingSchedule(false);
+    }
+  }
+
+  async function handleUpdateSchedule(scheduleId: number, data: ScheduleFormData) {
+    setSavingSchedule(true);
+    try {
+      const updated = await schedulesApi.update(scheduleId, data);
+      setSchedules((prev) => prev.map((s) => (s.id === scheduleId ? updated : s)));
+      setEditId(null);
+    } catch {
+      setError('Failed to update schedule.');
+    } finally {
+      setSavingSchedule(false);
+    }
+  }
+
+  async function handleDeleteSchedule(scheduleId: number) {
+    if (!window.confirm('Are you sure you want to delete this schedule?')) return;
+    try {
+      await schedulesApi.remove(scheduleId);
+      setSchedules((prev) => prev.filter((s) => s.id !== scheduleId));
+    } catch {
+      setError('Failed to delete schedule.');
+    }
+  }
+
+  async function handleToggleActive(s: Schedule) {
+    try {
+      const updated = await schedulesApi.update(s.id, { active: !s.active });
+      setSchedules((prev) => prev.map((sc) => (sc.id === s.id ? updated : sc)));
+    } catch {
+      setError('Failed to update schedule.');
     }
   }
 
@@ -241,6 +392,102 @@ export function DeviceDetailPage() {
                 <Line type="monotone" dataKey="kwh" stroke="#facc15" strokeWidth={2.5} dot={false} activeDot={{ r: 5 }} />
               </LineChart>
             </ResponsiveContainer>
+          )}
+        </div>
+      </section>
+
+      {/* Schedules */}
+      <section className="bg-white dark:bg-white/[0.03] border border-slate-200 dark:border-white/[0.08] rounded-2xl p-6 shadow-sm dark:shadow-none">
+        <div className="flex items-center justify-between mb-5">
+          <div className="flex items-center gap-2">
+            <CalendarDays size={17} className="text-yellow-500 dark:text-yellow-400" />
+            <h3 className="text-sm font-bold text-slate-900 dark:text-white">Schedules</h3>
+          </div>
+          {!showCreateForm && editId == null && (
+            <button
+              onClick={() => setShowCreateForm(true)}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-yellow-400 hover:bg-yellow-300 text-[#080810] text-xs font-bold transition"
+            >
+              <Plus size={13} />
+              Add schedule
+            </button>
+          )}
+        </div>
+
+        <div className="space-y-3">
+          {schedules.map((s) => (
+            <div key={s.id}>
+              {editId === s.id ? (
+                <ScheduleForm
+                  initial={{ days: s.days, startTime: s.startTime, endTime: s.endTime }}
+                  onSave={(data) => handleUpdateSchedule(s.id, data)}
+                  onCancel={() => setEditId(null)}
+                  saving={savingSchedule}
+                />
+              ) : (
+                <div className="flex flex-wrap items-center justify-between gap-3 px-4 py-3 bg-slate-50 dark:bg-white/[0.02] border border-slate-200 dark:border-white/[0.06] rounded-xl">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <div className="flex gap-1">
+                      {DAYS.map((d) => (
+                        <span
+                          key={d}
+                          className={`px-1.5 py-0.5 rounded text-[10px] font-bold ${
+                            s.days.includes(d)
+                              ? 'bg-yellow-100 dark:bg-yellow-400/15 text-yellow-700 dark:text-yellow-400'
+                              : 'bg-slate-100 dark:bg-white/[0.05] text-slate-300 dark:text-white/20'
+                          }`}
+                        >
+                          {d}
+                        </span>
+                      ))}
+                    </div>
+                    <span className="text-xs text-slate-500 dark:text-white/50 font-mono">
+                      {s.startTime} – {s.endTime}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2 shrink-0">
+                    <button
+                      onClick={() => handleToggleActive(s)}
+                      className={`px-2.5 py-1 rounded-lg text-[10px] font-bold transition ${
+                        s.active
+                          ? 'bg-emerald-100 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400'
+                          : 'bg-slate-100 dark:bg-white/[0.05] text-slate-400 dark:text-white/30'
+                      }`}
+                    >
+                      {s.active ? 'Active' : 'Paused'}
+                    </button>
+                    <button
+                      onClick={() => setEditId(s.id)}
+                      className="p-1.5 rounded-lg text-slate-400 dark:text-white/30 hover:bg-slate-200 dark:hover:bg-white/[0.08] hover:text-slate-700 dark:hover:text-white transition"
+                    >
+                      <Pencil size={13} />
+                    </button>
+                    <button
+                      onClick={() => handleDeleteSchedule(s.id)}
+                      className="p-1.5 rounded-lg text-slate-400 dark:text-white/30 hover:bg-red-100 dark:hover:bg-red-500/10 hover:text-red-600 dark:hover:text-red-400 transition"
+                    >
+                      <Trash2 size={13} />
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          ))}
+
+          {schedules.length === 0 && !showCreateForm && (
+            <div className="text-center py-8 text-slate-300 dark:text-white/20">
+              <CalendarDays size={28} className="mx-auto mb-2 opacity-40" />
+              <p className="text-sm">No schedules set.</p>
+              <p className="text-xs mt-1">Add a schedule to automate this device.</p>
+            </div>
+          )}
+
+          {showCreateForm && (
+            <ScheduleForm
+              onSave={handleCreateSchedule}
+              onCancel={() => setShowCreateForm(false)}
+              saving={savingSchedule}
+            />
           )}
         </div>
       </section>

@@ -1,4 +1,5 @@
 import bcrypt from 'bcrypt';
+import type { Device } from '@prisma/client';
 import { prisma } from '../src/db/prisma';
 import { specFor } from '../src/utils/deviceFactory';
 
@@ -12,13 +13,26 @@ async function main() {
   await prisma.building.deleteMany();
   await prisma.user.deleteMany();
 
+  const adminHash = await bcrypt.hash('admin1234', 10);
+  await prisma.user.create({
+    data: {
+      email: 'admin@isbs.com',
+      passwordHash: adminHash,
+      name: 'ISBS Admin',
+      role: 'ADMIN',
+      hasConnected: true,
+    },
+  });
+  console.log('[seed] admin created: admin@isbs.com');
+
   const passwordHash = await bcrypt.hash('demo1234', 10);
   const user = await prisma.user.create({
     data: {
       email: 'demo@smartbuilding.test',
       passwordHash,
-      name: 'Demo Resident',
+      name: 'Lamija Fatić',
       role: 'RESIDENT',
+      hasConnected: true,
     },
   });
   console.log('[seed] user created:', user.email);
@@ -60,7 +74,7 @@ async function main() {
     { name: 'Washing Machine', type: 'WASHING_MACHINE', roomIndex: 3, status: false },
   ];
 
-  const devices = [];
+  const devices: Device[] = [];
   for (const d of deviceDefs) {
     const spec = specFor(d.type);
     const created = await prisma.device.create({

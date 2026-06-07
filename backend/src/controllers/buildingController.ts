@@ -49,4 +49,23 @@ export const buildingController = {
       next(e);
     }
   },
+
+  async overview(req: Request, res: Response, next: NextFunction) {
+    try {
+      res.json(await buildingService.getOverview(Number(req.params.id)));
+    } catch (e) {
+      next(e);
+    }
+  },
+
+  async toggleSharedDevice(req: Request, res: Response, next: NextFunction) {
+    try {
+      const buildingId = Number(req.params.id);
+      const deviceId = Number(req.params.deviceId);
+      const updated = await buildingService.toggleSharedDevice(buildingId, deviceId);
+      res.json(updated);
+    } catch (e) {
+      next(e);
+    }
+  },
 };

@@ -12,4 +12,8 @@ export const dashboardApi = {
     );
     return res.data;
   },
+  async getChart(apartmentId: number, days: number): Promise<{ date: string; kwh: number }[]> {
+    const res = await api.get(`/dashboard/apartments/${apartmentId}/chart`, { params: { days } });
+    return res.data;
+  },
 };
